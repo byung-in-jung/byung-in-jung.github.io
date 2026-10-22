@@ -112,3 +112,6 @@ body.feed-view #bg-home{display:block}
   #bg-home .bg-foot{flex-direction:column;align-items:flex-start}
 }
 @media (prefers-reduced-motion:reduce){#bg-home .bg-load::after{animation:none;display:none}#bg-home *{transition:none!important}}
+
+/* ── 블로거 테마 정리(첫 화면에서만) ── */
+body.feed-view #Header1 .header-widget p,body.feed-view #Header1 p,body.feed-view .header-widget p,body.feed-view .Header .description{display:none!important}
