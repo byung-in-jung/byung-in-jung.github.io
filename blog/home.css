@@ -119,7 +119,7 @@ body.feed-view .centered-top-firstline,body.feed-view .main_header_elements,body
   #bg-home .bg-strip{display:none}
 }
 @media (max-width:1280px){#bg-home .bg-sun{display:none}}
-@media (max-width:900px){#bg-home .bg-sub{display:none}}
+@media (max-width:900px){#bg-home .bg-logo{flex-direction:column;align-items:flex-start;gap:2px}#bg-home .bg-sub::before{display:none}#bg-home .bg-sub{font-size:14px}}
 @media (max-width:760px){
   #bg-home{padding:0 0 12px}
   #bg-home .bg-head{padding:12px 2px 8px;flex-direction:column;align-items:flex-start;gap:2px}
