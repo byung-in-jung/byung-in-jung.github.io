@@ -5283,8 +5283,8 @@ const VWO = (() => {
         if (dd <= 8 && (!best || dd < best.dd)) best = { dd, f, cx, cy };
       }
     }
-    if (!best) return null; const h = Math.hypot(pk.n[0], pk.n[1]) || 1;
-    return { id: best.f.id, x: best.cx, y: best.cy, nx: pk.n[0] / h, ny: pk.n[1] / h, z: hAt(best.cx, best.cy) + Math.max(pk.agl, 1.6), h: best.f.h, top: best.f.top };
+    if (!best) return null; const h = Math.hypot(pk.n[0], pk.n[1]) || 1; let wnx = pk.n[0] / h, wny = pk.n[1] / h; if (p.d && wnx * p.d[0] + wny * p.d[1] > 0) { wnx = -wnx; wny = -wny; }      // 바깥 법선 = 시선 반대쪽(카메라 쪽)
+    return { id: best.f.id, x: best.cx, y: best.cy, nx: wnx, ny: wny, z: hAt(best.cx, best.cy) + Math.max(pk.agl, 1.6), h: best.f.h, top: best.f.top };
   }
   function wallPick(p) {
     if (!window.__fmWinClick || !SUN || !SUN.windowViewAtWall) return;
