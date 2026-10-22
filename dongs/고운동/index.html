@@ -5844,6 +5844,7 @@ function watchSun(){var p=document.getElementById('sun-panel');if(!p){setTimeout
   if(open){if(v&&v.st&&v.st.on){wasOn=true;autoOff=true;v.turnOff();setState('auto');toast('일조 보기 중에는 브이월드를 잠시 꺼요',3200)}else{wasOn=false}}
   else{if(wasOn){wasOn=false;autoOff=false;setState('loading');setTimeout(function(){if(v&&v.st&&!v.st.on)v.turnOn()},250);toast('브이월드를 다시 켰어요 · 보던 위치 그대로',2600)}else{autoOff=false}}}).observe(p,{attributes:true,attributeFilter:['class']})}
 watchSun();
+var mv=false;['pointerdown','wheel','touchstart','keydown'].forEach(function(e){document.addEventListener(e,function(){if(mv)return;mv=true;try{parent.postMessage({type:'vw-moved'},'https://scity3d.blogspot.com')}catch(x){}},{capture:true,passive:true})});
 window.addEventListener('hashchange',function(){var m=/[#&]view=(-?[d.]+),(-?[d.]+),([d.]+),(-?[d.]+),(-?[d.]+)/.exec(location.hash);if(m&&window.__fmView)window.__fmView(+m[1],+m[2],+m[3],+m[4],+m[5])});
 })();</script></body>
 </html>
