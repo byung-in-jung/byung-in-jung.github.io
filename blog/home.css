@@ -1,0 +1,51 @@
+/* 볕결 세종 — 블로그 첫 화면 스타일 */
+#bg-home{--bg:#f5eddc;--paper:#fff;--ink:#2b2a1f;--sub:#7a7358;--line:#e8dfc4;--g:#56632d;--g-d:#3f4a20;--sun:#f0a35c;
+  --serif:"Noto Serif KR","Nanum Myeongjo","Batang","AppleMyungjo",serif;--sans:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  display:none;box-sizing:border-box;max-width:none;margin:0 auto;padding:8px 20px 24px;color:var(--ink);font-family:var(--sans)}
+body.feed-view #bg-home{display:block}
+#bg-home *{box-sizing:border-box}
+
+#bg-home .bg-head{display:flex;align-items:baseline;justify-content:center;gap:12px;padding:2px 0 10px}
+#bg-home .bg-title{margin:0;font:700 24px/1.2 var(--serif);color:var(--g);letter-spacing:-.02em}
+#bg-home .bg-sub{margin:0;font:500 13px/1.2 var(--sans);color:var(--sub)}
+
+#bg-home .bg-nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 16px;padding:7px 8px;background:var(--g);border-radius:26px;box-shadow:0 2px 10px rgba(60,55,30,.12)}
+#bg-home .bg-chip{flex:none;height:38px;padding:0 16px;border:0;border-radius:999px;background:transparent;color:#fff;font:600 14px/1 var(--sans);cursor:pointer;transition:background .15s}
+#bg-home .bg-chip:hover{background:rgba(255,255,255,.14)}
+#bg-home .bg-chip.on{background:var(--sun);color:#3a2a05}
+#bg-home .bg-chip:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+
+#bg-home .bg-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+#bg-home .bg-ad{display:none}
+#bg-home .bg-main{min-width:0}
+#bg-home .bg-stage{position:relative;height:clamp(420px,calc(100svh - 190px),900px);border:4px solid var(--paper);border-radius:16px;background:var(--paper);overflow:hidden;box-shadow:0 4px 16px rgba(60,50,30,.16);outline:1px solid rgba(90,100,60,.25)}
+#bg-home .bg-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#eef3ec}
+#bg-home .bg-load{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#eef3ec;color:var(--g);font:600 14px/1.4 var(--sans);transition:opacity .3s}
+#bg-home .bg-load.off{opacity:0;pointer-events:none}
+#bg-home .bg-spin{width:28px;height:28px;border:3px solid #d8dcc0;border-top-color:var(--g);border-radius:50%;animation:bg-spin .8s linear infinite}
+@keyframes bg-spin{to{transform:rotate(360deg)}}
+#bg-home .bg-fs{position:absolute;left:12px;top:12px;z-index:3;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.96);color:var(--g-d);box-shadow:0 2px 8px rgba(30,50,40,.22)}
+#bg-home .bg-say{position:absolute;left:50%;bottom:76px;z-index:5;transform:translateX(-50%);max-width:calc(100% - 24px);padding:9px 16px;border-radius:999px;background:rgba(43,42,31,.92);color:#fff;font:500 13px/1.4 var(--sans);text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
+#bg-home .bg-say.on{opacity:1}
+#bg-home .bg-src{margin:6px 0 0;text-align:center;font-size:11px;color:var(--sub);opacity:.85}
+
+@media (min-width:1280px){
+  #bg-home .bg-grid{grid-template-columns:200px minmax(0,1fr) 200px;gap:16px}
+  #bg-home .bg-ad{display:flex;flex-direction:column;gap:12px}
+  #bg-home .bg-pc{position:relative;margin:0;aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:#e6dfcd;box-shadow:0 1px 3px rgba(60,50,30,.10)}
+  #bg-home .bg-pc img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 40%;filter:saturate(.85) brightness(1.02);opacity:.94;transition:filter .2s,opacity .2s}
+  #bg-home .bg-pc:hover img{filter:none;opacity:1}
+  #bg-home .bg-pc figcaption{position:absolute;left:0;right:0;bottom:0;padding:28px 10px 8px;display:flex;flex-direction:column;gap:2px;color:#fff;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.45))}
+  #bg-home .bg-pc figcaption b{font:600 12px/1.3 var(--serif)}
+  #bg-home .bg-pc figcaption small{font:500 10px/1.3 var(--sans);opacity:.8}
+  #bg-home .bg-pc figcaption a{color:#fff;text-decoration:underline}
+}
+@media (min-width:1280px) and (max-width:1679px){#bg-home .bg-grid{grid-template-columns:160px minmax(0,1fr) 160px;gap:12px}}
+@media (max-width:760px){
+  #bg-home{padding:4px 12px 16px}
+  #bg-home .bg-title{font-size:20px}#bg-home .bg-sub{display:none}
+  #bg-home .bg-nav{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;border-radius:999px;height:52px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
+  #bg-home .bg-nav::-webkit-scrollbar{display:none}
+  #bg-home .bg-stage{height:clamp(340px,calc(100svh - 190px),680px)}
+}
+@media (prefers-reduced-motion:reduce){#bg-home .bg-spin{animation:none}#bg-home *{transition:none!important}}
