@@ -13,14 +13,16 @@
     { f: 'lake17.jpg', t: '세종호수공원 수상무대', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_17.jpg' },
     { f: 'lib.jpg', t: '세종국립도서관', a: 'Minseong Kim', l: 'CC BY-SA 4.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_National_Library.jpg' },
     { f: 'lake5.jpg', t: '호수공원 물놀이 광장', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_05.jpg' },
-    { f: 'lake9.jpg', t: '호수공원 산책길', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_09.jpg' }
+    { f: 'lake9.jpg', t: '호수공원 산책길', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_09.jpg' },
+    { f: 'lake2.jpg', t: '호수공원 분수와 산', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_02.jpg' },
+    { f: 'lib_east.jpg', t: '세종국립도서관 동쪽', a: 'Minseong Kim', l: 'CC BY-SA 4.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_National_Library_east.jpg' }
   ];
   var SELF = (function () { var s = document.currentScript; return s && s.src ? s.src.replace(/[^/]*$/, '') : VIEWER + 'blog/'; })();
   var BASE = SELF.replace(/blog\/$/, '');
 
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function card(p) { return '<figure class="bg-pc"><img src="' + BASE + 'photos/' + p.f + '" alt="' + esc(p.t) + '" decoding="async" loading="lazy"><figcaption><b>' + esc(p.t) + '</b><small>' + esc(p.a) + ' · <a href="' + p.u + '" target="_blank" rel="noopener">' + p.l + '</a></small></figcaption></figure>'; }
+  function card(p) { return '<figure class="bg-pc"><img src="' + BASE + 'photos/' + p.f + '" alt="" decoding="async" loading="lazy"><figcaption><b>' + esc(p.t) + '</b><small>' + esc(p.a) + ' · <a href="' + p.u + '" target="_blank" rel="noopener">' + p.l + '</a></small></figcaption></figure>'; }
 
   /* ---------- 마크업 ---------- */
   root.innerHTML = '';
@@ -35,13 +37,13 @@
   var btns = {}, order = [];
   DONGS.forEach(function (n, i) {
     var b = el('button', 'bg-chip' + (i === 0 ? ' all' : ''), i === 0 ? '전체<b>21</b>' : esc(n.replace(/동$/, ''))); b.type = 'button'; b.setAttribute('data-n', n); b.title = n; b.tabIndex = i === 0 ? 0 : -1;
-    nav.appendChild(b); btns[n] = b; order.push(n);
+    b.style.setProperty('--i', Math.min(i, 20)); nav.appendChild(b); btns[n] = b; order.push(n);
   });
   scroller.appendChild(nav); rail.appendChild(scroller);
 
   var grid = el('div', 'bg-grid'), top = el('div', 'bg-top'); top.appendChild(head); top.appendChild(rail);
-  var adL = el('aside', 'bg-ad bg-ad-l', card(PHOTOS[0]) + card(PHOTOS[1])); adL.id = 'bg-ad-l'; adL.setAttribute('aria-label', '세종 명소 · 광고 자리(왼쪽)');
-  var adR = el('aside', 'bg-ad bg-ad-r', card(PHOTOS[2]) + card(PHOTOS[3])); adR.id = 'bg-ad-r'; adR.setAttribute('aria-label', '세종 명소 · 광고 자리(오른쪽)');
+  var adL = el('aside', 'bg-ad bg-ad-l', card(PHOTOS[0]) + card(PHOTOS[1]) + card(PHOTOS[4])); adL.id = 'bg-ad-l'; adL.setAttribute('aria-label', '세종 명소 · 광고 자리(왼쪽)');
+  var adR = el('aside', 'bg-ad bg-ad-r', card(PHOTOS[2]) + card(PHOTOS[3]) + card(PHOTOS[5])); adR.id = 'bg-ad-r'; adR.setAttribute('aria-label', '세종 명소 · 광고 자리(오른쪽)');
   var main = el('main', 'bg-main');
   var stage = el('div', 'bg-stage');
   var frame = el('iframe', 'bg-frame'); frame.title = '선택한 동의 3D 지도'; frame.setAttribute('allow', 'fullscreen'); frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-pointer-lock');
@@ -58,10 +60,12 @@
   var say = el('div', 'bg-say'); say.setAttribute('role', 'status');
   stage.appendChild(frame); stage.appendChild(loader); stage.appendChild(badge); stage.appendChild(say);
   var foot = el('footer', 'bg-foot', '<span>참고용(실측·법적 판정 아님) · 위성영상: 브이월드(국토교통부) · 경계: © OpenStreetMap contributors</span><span class="bg-brand"><i></i>볕결 세종</span>');
-  var strip = el('div', 'bg-strip', PHOTOS.map(card).join(''));
+  var strip = el('div', 'bg-strip', PHOTOS.slice(0, 4).map(card).join(''));
   main.appendChild(stage); main.appendChild(strip); main.appendChild(foot);
   grid.appendChild(top); grid.appendChild(adL); grid.appendChild(main); grid.appendChild(adR);
-  root.appendChild(grid);
+  var skip = el('a', 'bg-skip', '지도 건너뛰기'); skip.href = '#bg-after'; var live = el('div', 'bg-vh'); live.setAttribute('aria-live', 'polite'); var after = el('span'); after.id = 'bg-after'; after.tabIndex = -1;
+  root.appendChild(skip); root.appendChild(live); root.appendChild(grid); root.appendChild(after);
+  try { if (!document.querySelector('meta[name=theme-color]')) { var mt = document.createElement('meta'); mt.name = 'theme-color'; mt.content = '#f5eddc'; document.head.appendChild(mt); } } catch (x) { /* 메타 추가 불가 */ }
 
   /* ---------- 상태 ---------- */
   var cur = null, moved = false, started = false, lastLL = null, sayT = 0, stT = [], polys = null;
@@ -84,7 +88,7 @@
   function setSeg(state) {
     var on = state === 'on' || state === 'loading', auto = state === 'auto';
     segBtn.sat.setAttribute('aria-pressed', on ? 'true' : 'false'); segBtn.map.setAttribute('aria-pressed', on ? 'false' : 'true');
-    seg.classList.toggle('loading', state === 'loading'); segBtn.sat.disabled = auto; segBtn.sat.title = auto ? '일조 보기 중에는 지도만 보여요' : '';
+    seg.classList.toggle('loading', state === 'loading'); seg.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false'); segBtn.sat.disabled = auto; segBtn.sat.title = auto ? '일조 보기 중에는 지도만 보여요' : '';
     root.classList.toggle('is-loading', state === 'loading');
   }
   function setVw(on) { try { frame.contentWindow.postMessage({ type: 'vw-set', on: on }, ORIGIN); } catch (x) { /* 아직 로딩 전 */ } }
@@ -109,7 +113,7 @@
     if (changed) { nameEl.classList.add('swap'); setTimeout(function () { nameEl.textContent = name; nameEl.classList.remove('swap'); }, 160); }
     var u = viewerUrl(name, hash);
     stages(true, first); setSeg('loading');
-    frame.src = u; fs.href = u; badge.style.display = 'flex';
+    frame.title = name + ' 3D 일조 지도'; live.textContent = name + ' 지도를 불러옵니다'; frame.src = u; fs.href = u; badge.style.display = 'flex';
     try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
   }
   nav.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('.bg-chip') : null; if (!b) return; moved = true; select(b.getAttribute('data-n')); });
@@ -212,5 +216,6 @@
     root.style.maxWidth = 'none'; root.style.width = W + 'px'; root.style.marginLeft = ((vw - W) / 2 - l) + 'px';
     moveInd(false);
   }
+  requestAnimationFrame(function () { root.classList.add('bg-in'); });
   fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit); setTimeout(fit, 600); setTimeout(fit, 2000);
 })();
