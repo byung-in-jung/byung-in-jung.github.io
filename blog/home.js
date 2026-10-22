@@ -80,7 +80,7 @@
     if (act) { var b = el('button', 'bg-say-b', act.label); b.type = 'button'; b.addEventListener('click', function () { say.classList.remove('on'); act.fn(); }); say.appendChild(b); }
     say.classList.toggle('act', !!act); say.classList.add('on'); clearTimeout(sayT); sayT = setTimeout(function () { say.classList.remove('on'); }, ms || (act ? 12000 : 7000));
   }
-  var satT = 0, satT2 = 0;
+  var satT = 0, satT2 = 0, readyT = 0;
   function watchSat(state) {
     clearTimeout(satT);
     if (state === 'loading') {
@@ -196,7 +196,7 @@
   window.addEventListener('message', function (e) {
     if (e.origin !== ORIGIN || !e.data) return;
     var t = e.data.type;
-    if (t === 'vw-ready') stages(false);
+    if (t === 'vw-ready') { clearTimeout(readyT); readyT = setTimeout(function () { stages(false); }, 1200); }
     else if (t === 'vw-moved') moved = true;
     else if (t === 'vw-state') setSeg(e.data.state);
     else if (t === 'vw-view' && cur) { try { localStorage.setItem('hmLast', JSON.stringify({ n: cur, h: e.data.h, t: Date.now() })); } catch (x) { /* 저장 불가 */ } }
