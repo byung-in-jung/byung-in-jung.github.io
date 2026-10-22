@@ -5384,11 +5384,25 @@ const VWO = (() => {
     }
     return null;
   }
+    function pkWall(p) {      // 브이월드가 알려 준 눌린 점(pk, 벽 법선)을 우리 건물 윤곽에 맞춘다(시선 계산 대신): 지형·정합 차이에 덜 민감
+    const pk = p && p.pk; if (!pk || !pk.n || !(Math.abs(pk.n[2]) < 0.35)) return null;
+    const [px0, py0] = toXY(pk.lon, pk.lat), fp = footprints(); let best = null;
+    for (const f of fp) {
+      if (px0 < f.x0 - 8 || px0 > f.x1 + 8 || py0 < f.y0 - 8 || py0 > f.y1 + 8) continue;
+      const q = f.pts; for (let i = 0; i < q.length; i++) {
+        const j = (i + 1) % q.length, ax = q[i][0], ay = q[i][1], dx = q[j][0] - ax, dy = q[j][1] - ay, L2 = dx * dx + dy * dy; if (L2 < 2.25) continue;
+        const s = clamp(((px0 - ax) * dx + (py0 - ay) * dy) / L2, 0, 1), cx = ax + s * dx, cy = ay + s * dy, dd = Math.hypot(px0 - cx, py0 - cy);
+        if (dd <= 8 && (!best || dd < best.dd)) best = { dd, f, cx, cy };
+      }
+    }
+    if (!best) return null; const h = Math.hypot(pk.n[0], pk.n[1]) || 1;
+    return { id: best.f.id, x: best.cx, y: best.cy, nx: pk.n[0] / h, ny: pk.n[1] / h, z: hAt(best.cx, best.cy) + Math.max(pk.agl, 1.6), h: best.f.h, top: best.f.top };
+  }
   function wallPick(p) {
     if (!window.__fmWinClick || !SUN || !SUN.windowViewAtWall) return;
     const bad = () => fmToast('건물 벽을 눌러 주세요. (창문이 있는 건물 옆면을 눌러요)');
     if (!p || p.lon == null || !p.d) return bad();
-    const w = rayWall(p, p.d); if (!w) return bad();
+    const w = pkWall(p) || rayWall(p, p.d); if (!w) return bad();
     const gr = hAt(w.x, w.y), z = clamp(w.z, gr + 1.6, Math.max(gr + 2, w.top - 0.6));
     if (!SUN.windowViewAtWall(w.id, w.x, w.y, z, w.nx, w.ny)) return bad();
     try { SUN.showBuilding(w.id); } catch (e) { /* 카드 없이 진행 */ }
