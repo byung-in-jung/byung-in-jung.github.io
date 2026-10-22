@@ -1,0 +1,40 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#fafafa"><meta name="description" content="용호동 경계를 브이월드 위성영상 위에 표시한 큰 지도입니다."><title>용호동 지도 · 볕결 세종</title><style>:root{color-scheme:light;--bg:#fafafa;--card:#fff;--ink:#111827;--muted:#4b5563;--faint:#6b7280;--line:#e5e7eb;--soft:#f3f4f6;font-family:"Pretendard Variable",Pretendard,ui-sans-serif,system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;color:var(--ink);background:var(--bg)}
+*{box-sizing:border-box}body{margin:0}a{color:inherit;text-decoration:none}svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+a:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.wrap{width:min(1100px,calc(100% - 48px));margin:auto}
+header{height:76px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;gap:12px;align-items:center;font-size:24px;font-weight:900;letter-spacing:-.04em}
+.sunmark{display:grid;place-items:center;width:44px;height:44px;border-radius:16px;background:#111827;color:#fbbf24}
+.brand small{font-weight:500;font-size:13px;color:var(--muted);letter-spacing:0}
+.pill{min-height:40px;display:inline-flex;align-items:center;gap:6px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13px;font-weight:600}
+.pill:hover{border-color:#9ca3af}.pill.dark{background:linear-gradient(180deg,#111827,#020617);color:#fff;border-color:transparent;box-shadow:0 6px 18px #00000030,inset 0 1px 0 #ffffff10}
+nav.top{display:flex;gap:10px}
+.eyebrow{font-size:11px;letter-spacing:.14em;color:var(--faint);font-weight:700;margin:26px 0 10px}
+h1{font-size:clamp(28px,3.4vw,40px);letter-spacing:-.04em;margin:0;font-weight:900;line-height:1.15}h1 em{font-style:normal;color:var(--faint)}
+.lead{font-size:14px;color:var(--muted);margin:10px 0 24px}
+.menu{border:1px solid var(--line);border-radius:20px;background:var(--card);box-shadow:0 24px 80px #0f172a14;padding:22px 24px 26px;margin-bottom:28px}
+.search{display:flex;gap:9px;align-items:center;height:46px;padding:0 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:20px}
+.search svg{color:var(--faint)}.search input{width:100%;border:0;outline:none;background:transparent;font:inherit;font-size:14px}
+.search:focus-within{border-color:var(--ink);box-shadow:0 0 0 3px #11182714}
+.root{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;padding:6px 0 10px}
+.root .n{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);background:var(--soft);border-radius:999px;padding:4px 10px}
+.tree{list-style:none;margin:0 0 0 11px;padding:0 0 0 22px;border-left:1.5px solid var(--line)}
+.tree li{position:relative}.tree li::before{content:"";position:absolute;left:-22px;top:32px;width:16px;border-top:1.5px solid var(--line)}
+.tree a{display:flex;align-items:center;gap:12px;min-height:56px;margin:4px 0;padding:0 16px;border:1px solid transparent;border-radius:14px;font-size:15px;font-weight:700;transition:background .15s,border-color .15s}
+.tree a:hover{background:var(--soft);border-color:var(--line)}
+.tree a small{font-weight:500;font-size:12px;color:var(--faint)}
+.tree a .tag{font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:999px;padding:3px 9px}
+.tree a svg{margin-left:auto;color:var(--faint)}
+.tree li[hidden],#empty[hidden]{display:none}#empty{font-size:13px;color:var(--muted);padding:16px 0 0 34px}
+.more{display:flex;align-items:center;gap:10px;margin-top:18px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--soft);font-size:14px;font-weight:700}.more svg{margin-left:auto}
+.foot{font-size:11px;color:var(--faint);line-height:1.7;padding:0 2px 34px}.foot a{text-decoration:underline;text-underline-offset:3px}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:22px 0 6px}.crumb a:hover{color:var(--ink)}.crumb b{color:var(--ink)}.crumb svg{width:14px;height:14px}
+.figure{margin:18px 0 0;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#111827;box-shadow:0 24px 80px #0f172a1f;position:relative}
+.figure img{display:block;width:100%;height:auto;max-height:78vh;object-fit:contain;background:#111827}
+.figure .cap{position:absolute;left:14px;bottom:14px;padding:7px 12px;border-radius:999px;background:#111827cc;color:#e5e7eb;font-size:11px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 10px}
+.pager{display:flex;justify-content:space-between;gap:10px;margin:22px 0 28px}
+@media(max-width:700px){.wrap{width:calc(100% - 24px)}header{height:64px}.brand{font-size:21px}.sunmark{width:40px;height:40px;border-radius:14px}.brand small{display:none}.nav-all{display:none}.menu{padding:16px 14px 20px;border-radius:18px}.tree{padding-left:16px}.tree li::before{left:-16px;width:10px}.figure{border-radius:16px}.figure img{max-height:none}}</style></head><body><div class="wrap"><header><a class="brand" href="/sejong/" aria-label="볕결 세종 홈"><span class="sunmark"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg></span><span>볕결 <small>세종</small></span></a><nav class="top"><a class="pill nav-all" href="/regions/36110-세종특별자치시/">세종시 전체</a><a class="pill dark" href="/">전국 지도 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a></nav></header><main><nav class="crumb" aria-label="현재 위치"><a href="/sejong/">행복도시</a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg><b>용호동</b></nav><h1>용호동</h1>
+<figure class="figure"><img src="/sejong/img/용호동.jpg" alt="용호동 위성영상과 동 경계(주황 선)" decoding="async"><figcaption class="cap">주황 선 = 용호동 경계</figcaption></figure>
+<div class="actions"><a class="pill dark" href="/dongs/%EC%9A%A9%ED%98%B8%EB%8F%99/?theme=light#sun=1&shadow=1">3D 일조 지도 열기 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a><a class="pill" href="/sejong/">전체 메뉴</a></div>
+<div class="pager"><a class="pill" href="/sejong/%EB%8B%A4%EC%86%9C%EB%8F%99/">← 다솜동</a><a class="pill" href="/sejong/%EB%88%84%EB%A6%AC%EB%8F%99/">누리동 →</a></div></main><div class="foot">위성영상: 브이월드(국토교통부, VWORLD) · 경계: © OpenStreetMap contributors(ODbL). 건물 높이 일부는 추정값이며 일조·그림자·동선은 모델 기반 참고 정보입니다. 실측이나 법적 판단을 대신하지 않습니다. <a href="/open-data.html">자료 안내 자세히 보기</a></div></div></body></html>

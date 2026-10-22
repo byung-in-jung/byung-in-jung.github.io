@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>브이월드 덮어 보기 (iframe 전용)</title>
+<style>
+  html, body { margin:0; height:100%; background:#10151c; overflow:hidden; }
+  #vmap { position:absolute; inset:0; }
+</style>
+</head>
+<body>
+<div id="vmap"></div>
+<!-- 새롬동·모든 동 뷰어(flowmap/vwo_shared.js)의 '브이월드로 덮어 보기' 가 같은 출처(127.0.0.1) iframe 으로 연다. 키는 서버가 요청 때 .env 에서 읽어 config.js 에만 써 준다(저장·출력 안 함).
+     부모와는 postMessage 만 주고받고, 메시지에 키·주소를 싣지 않는다. docs/VWORLD-OVERLAY.md -->
+<script>window.VW3D_CONFIG={ok:true,version:'3.0',domain:'byung-in-jung.github.io'};document.write('<script src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=45F3FC63-6C5A-4635-BF1A-6E2EB95B2A99&domain=byung-in-jung.github.io"><\/script>');</script>
+<script>
+'use strict';
+const P = window.parent, say = (m) => { try { P.postMessage(Object.assign({ vwo: 1 }, m), location.origin); } catch (e) {} };
+let V = null, lockLook = false, wc = false, want = null, touched = false, doneSent = false, t0 = performance.now();
+const D2R = Math.PI / 180;
+
+function err(code) { say({ t: 'error', code }); }
+// (엔진 자신의 스크립트가 내는 무해한 오류로 실패 처리하지 않는다: 엔진이 안 뜨면 아래 50초 타임아웃이 알린다)
+if (!window.VW3D_CONFIG || !window.VW3D_CONFIG.ok) err('nokey');
+else if (typeof vw === 'undefined') err('noengine');
+else {
+  try {
+    let ip = [127.2508, 36.4800, 330, 0, -35]; const hm = /^#c=(-?[0-9.]+),(-?[0-9.]+),(-?[0-9.]+),(-?[0-9.]+),(-?[0-9.]+)$/.exec(location.hash); if (hm) ip = hm.slice(1).map(Number);      // 부모가 알려 준 시작 카메라(엔진이 시작하며 기본 위치로 되돌리는 것을 줄인다)
+    const c0 = new vw.CoordZ(ip[0], ip[1], ip[2]);
+    const opts = { mapId: 'vmap', initPosition: new vw.CameraPosition(c0, new vw.Direction(ip[3], ip[4], 0)), logo: true, navigation: true };
+    window.map = new vw.Map(); map.setOption(opts); map.setMapId('vmap'); map.setInitPosition(opts.initPosition); map.setLogoVisible(true); map.start();
+  } catch (e) { err('engine'); }
+  const iv = setInterval(() => {
+    if (map._wsViewer && map._wsViewer.scene) { clearInterval(iv); V = map._wsViewer; ready(); }
+    else if (performance.now() - t0 > 50000) { clearInterval(iv); err('timeout'); }
+  }, 200);
+}
+
+function ground(lon, lat) { try { const h = V.scene.globe.getHeight(Cesium.Cartographic.fromDegrees(lon, lat)); return h == null || !isFinite(h) ? null : h; } catch (e) { return null; } }
+
+function worldAt(px, py) {
+  const w = new Cesium.Cartesian2(px, py); let c = null;
+  try { if (V.scene.pickPositionSupported) c = V.scene.pickPosition(w); } catch (e) { c = null; }
+  if (!c) { try { c = V.scene.globe.pick(V.camera.getPickRay(w), V.scene); } catch (e) { c = null; } }
+  return c || null;
+}
+// 누른 곳을 지나는 시선(카메라 위치 + 방향, 동·북·위)을 부모에 준다: 부모가 우리 건물과 만나는 벽을 찾는다(깊이 버퍼가 불안정해서 pickPosition 에 의존하지 않는다)
+function rayAt(px, py) {
+  try {
+    const r = V.camera.getPickRay(new Cesium.Cartesian2(px, py)), g = Cesium.Cartographic.fromCartesian(r.origin), lon = Cesium.Math.toDegrees(g.longitude), lat = Cesium.Math.toDegrees(g.latitude), gd = ground(lon, lat);
+    const inv = Cesium.Matrix4.inverseTransformation(Cesium.Transforms.eastNorthUpToFixedFrame(r.origin), new Cesium.Matrix4()), e = Cesium.Matrix4.multiplyByPointAsVector(inv, r.direction, new Cesium.Cartesian3());
+    return { lon, lat, h: g.height, agl: gd == null ? null : g.height - gd, d: [e.x, e.y, e.z], pk: pickAt(px, py) };
+  } catch (e) { return null; }
+}
+function pickAt(px, py) {
+  try {
+    const c = worldAt(px, py); if (!c) return null;
+    const g = Cesium.Cartographic.fromCartesian(c), lon = Cesium.Math.toDegrees(g.longitude), lat = Cesium.Math.toDegrees(g.latitude), gd = ground(lon, lat);
+    let n = null; const a = worldAt(px + 5, py), b = worldAt(px, py + 5);
+    if (a && b) {
+      const u = Cesium.Cartesian3.subtract(a, c, new Cesium.Cartesian3()), v = Cesium.Cartesian3.subtract(b, c, new Cesium.Cartesian3()), cr = Cesium.Cartesian3.cross(u, v, new Cesium.Cartesian3());
+      if (Cesium.Cartesian3.magnitude(cr) > 1e-6) {
+        Cesium.Cartesian3.normalize(cr, cr);
+        const inv = Cesium.Matrix4.inverseTransformation(Cesium.Transforms.eastNorthUpToFixedFrame(c), new Cesium.Matrix4()), e = Cesium.Matrix4.multiplyByPointAsVector(inv, cr, new Cesium.Cartesian3());
+        n = [e.x, e.y, e.z];
+      }
+    }
+    return { lon, lat, h: g.height, agl: gd == null ? null : g.height - gd, n };
+  } catch (e) { return null; }
+}
+
+// 부모가 준 카메라 {lon,lat,agl,absZ,heading,pitch,fov(수평/수직 중 큰 쪽이 아니라 세로 fov, 도),aspect}
+// 개요(높은 고도) 뷰어는 추가로 ref={lon,lat,gAbs,e,n,u} (바라보는 지면점과 그 점 기준 카메라의 동·북·위 상대 위치)를 준다: 보는 땅의 높이를 기준으로
+// 상대 위치·시선을 그 점의 동-북-위 좌표계에 그대로 놓는다(지구 곡률 포함, 먼 카메라 아래 지형 차이에 영향받지 않음). ref 가 없으면(동 뷰어) 예전 그대로.
+const enuAt = (lon, lat, h) => Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(lon, lat, h));
+function apply(c) {
+  want = c;
+  try { V.camera.cancelFlight && V.camera.cancelFlight(); } catch (e) { /* 비행 없음 */ }
+  // Cesium 의 fov 는 가로가 더 길면 가로 화각, 아니면 세로 화각이다
+  const v = c.fov * D2R, asp = c.aspect || (innerWidth / innerHeight), hf = 2 * Math.atan(Math.tan(v / 2) * asp);
+  V.camera.frustum.fov = asp >= 1 ? hf : v;
+  if (c.ref) {
+    const r = c.ref, g = ground(r.lon, r.lat), T = g == null ? r.gAbs : g; want.gUsed = g; want.T = T;
+    const M = enuAt(r.lon, r.lat, T), hd = c.heading * D2R, pt = c.pitch * D2R, ch = Math.cos(pt), sh = Math.sin(hd), chd = Math.cos(hd);
+    const pos = Cesium.Matrix4.multiplyByPoint(M, new Cesium.Cartesian3(r.e, r.n, r.u), new Cesium.Cartesian3());
+    const dir = Cesium.Matrix4.multiplyByPointAsVector(M, new Cesium.Cartesian3(sh * ch, chd * ch, Math.sin(pt)), new Cesium.Cartesian3());
+    const up = Cesium.Matrix4.multiplyByPointAsVector(M, new Cesium.Cartesian3(-sh * Math.sin(pt), -chd * Math.sin(pt), ch), new Cesium.Cartesian3());
+    V.camera.setView({ destination: pos, orientation: { direction: dir, up } });
+    const cg = Cesium.Cartographic.fromCartesian(pos); want.cLon = Cesium.Math.toDegrees(cg.longitude); want.cLat = Cesium.Math.toDegrees(cg.latitude); want.hUsed = cg.height;
+    want.eh = Cesium.Math.toDegrees(V.camera.heading); want.ep = Cesium.Math.toDegrees(V.camera.pitch);      // 곡률 때문에 카메라 자신의 동-북-위 기준 방향은 ref 기준과 0.1도 안팎 달라서 실제 엔진 값으로 비교한다
+  } else {
+    const g = ground(c.lon, c.lat); want.gUsed = g;
+    const h = g == null ? c.absZ : g + c.agl; want.hUsed = h;
+    V.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(c.lon, c.lat, h), orientation: { heading: c.heading * D2R, pitch: c.pitch * D2R, roll: 0 } });
+  }
+  V.scene.requestRender && V.scene.requestRender();
+}
+const refGround = (w) => (w.ref ? ground(w.ref.lon, w.ref.lat) : ground(w.lon, w.lat));
+
+function ready() {
+  // 사용자가 이 화면을 직접 움직이면 지형이 늦게 와도 카메라를 다시 맞추지 않는다
+  let dn = null;
+  const cv = V.scene.canvas; ['wheel', 'keydown'].forEach((e) => cv.addEventListener(e, () => { touched = true; }, { passive: true }));
+  cv.addEventListener('pointermove', (e) => { if (e.buttons && dn && Math.hypot(e.clientX - dn.x, e.clientY - dn.y) > 6) touched = true; }, { passive: true });      // 짧은 클릭(창가 클릭)은 카메라를 만진 것으로 치지 않는다
+  // 창가 클릭: 짧게 눌렀을 때(드래그 아님) 그 점의 3D 위치·면 방향을 부모에 알린다(부모가 우리 건물 벽에 맞춘다)
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') say({ t: 'esc' }); });      // 키보드 초점이 이 창에 있어도 Esc 를 부모에 전달
+  cv.addEventListener('pointerdown', (e) => { dn = { x: e.clientX, y: e.clientY, t: performance.now(), lx: e.clientX, ly: e.clientY, id: e.pointerId }; }, { passive: true });
+  // 창가 시점(잠금): 끌기는 엔진 카메라가 아니라 부모의 창가 시선을 돌린다(부모가 돌린 값을 다시 'cam' 으로 보내 준다)
+  cv.addEventListener('pointermove', (e) => { if (lockLook && dn && e.buttons && e.pointerId === dn.id) { say({ t: 'look', dx: e.clientX - dn.lx, dy: e.clientY - dn.ly }); dn.lx = e.clientX; dn.ly = e.clientY; } }, { passive: true });
+  cv.addEventListener('pointerup', (e) => {
+    if (!wc || !dn) return; const mv = Math.hypot(e.clientX - dn.x, e.clientY - dn.y), dt = performance.now() - dn.t; dn = null;
+    if (mv > 6 || dt > 700) return; say({ t: 'pick', pick: rayAt(e.clientX, e.clientY) });
+  }, { passive: true });
+  cv.addEventListener('wheel', (e) => { if (lockLook) { e.preventDefault(); say({ t: 'wheel', dy: e.deltaY }); } }, { passive: false });      // 창가 시점(잠금): 휠은 화각만 바꾼다(부모가 처리)
+  // 지형 높이가 처음엔 비어 있어 AGL 이 틀어질 수 있다: 지형 타일이 오면 한 번씩 다시 맞춘다(건드리기 전까지)
+  let seenQ = false;
+  V.scene.globe.tileLoadProgressEvent.addEventListener((n) => { if (n > 0) seenQ = true; if (n === 0 && want && !touched) { const g = refGround(want); if (g != null && (want.gUsed == null || Math.abs(g - want.gUsed) > 0.5)) apply(want); } });
+  // 브이월드 화면(또는 엔진 조작 버튼)을 사용자가 직접 만졌는지: 만지기 전까지만 우리 시점을 지킨다
+  window.addEventListener('pointerdown', (e) => { if (e.target !== cv) touched = true; }, true);
+  // ---- 영상이 실제로 도착했는지 화면 픽셀로 확인: 아래쪽 55% 를 작게 줄여 밝기 표준편차를 잰다(지면 단색 = 영상 없음). 렌더 직후(postRender)에만 캔버스를 읽을 수 있다.
+  const sc = document.createElement('canvas'); sc.width = 48; sc.height = 24; const sx = sc.getContext('2d', { willReadFrequently: true });
+  let wantSample = false, std = 0, mean = 0, realN = 0, realT = 0, okN = 0;
+  const imgPending = () => { try { const tr = V.scene.globe._surface._tilesToRender; let n = 0; for (const t of tr) { const im = t.data && t.data.imagery; if (im) for (const ti of im) { const li = ti.loadingImagery; if (li && li.state < 4) n++; }      /* 4=READY, 5/6=FAILED·INVALID 는 엔진이 상위 타일 영상으로 대신하므로 기다리지 않는다 */ } return tr.length ? n : 1; } catch (e) { return -1; } };
+  V.scene.postRender.addEventListener(() => {
+    if (!wantSample) return; wantSample = false;
+    try {
+      const w = cv.width, h = cv.height; if (!w || !h) return;
+      sx.drawImage(cv, 0, Math.floor(h * 0.45), w, Math.ceil(h * 0.55), 0, 0, 48, 24);
+      const d = sx.getImageData(0, 0, 48, 24).data; let s1 = 0, s2 = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) { const y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; s1 += y; s2 += y * y; n++; }
+      mean = s1 / n; std = Math.sqrt(Math.max(0, s2 / n - mean * mean));
+    } catch (e) { std = -1; }
+  });
+  const dist = () => {      // 지금 엔진 카메라가 우리가 바라는 값에서 얼마나 벗어났나
+    if (!want) return 0; const c = V.camera.positionCartographic, lon = Cesium.Math.toDegrees(c.longitude), lat = Cesium.Math.toDegrees(c.latitude);
+    const wl = want.cLon != null ? want.cLon : want.lon, wt = want.cLat != null ? want.cLat : want.lat, dx = (lon - wl) * 111320 * Math.cos(wt * D2R), dy = (lat - wt) * 110574, dz = want.hUsed == null ? 0 : c.height - want.hUsed;
+    const wh = want.eh != null ? want.eh : want.heading, wp = want.ep != null ? want.ep : want.pitch; let dh = Math.abs(Cesium.Math.toDegrees(V.camera.heading) - wh) % 360; if (dh > 180) dh = 360 - dh;
+    return Math.max(Math.hypot(dx, dy) / 2, Math.abs(dz) / 4, dh / 0.7, Math.abs(Cesium.Math.toDegrees(V.camera.pitch) - wp) / 0.7);      // 1 이상이면 벗어남
+  };
+  say({ t: 'ready' });
+  // 창이 가려지거나 다른 탭 뒤에 있으면 브라우저가 requestAnimationFrame 을 멈춰 엔진이 그리지 못하고 타일도 못 받아 로딩이 끝없이 길어졌다(R6): 로딩이 끝나기 전에는 프레임이 안 나오면 직접 그려 준다.
+  let lf = -1, lt = 0;
+  setInterval(() => { if (doneSent) return; const fn = V.scene.frameState.frameNumber, now = performance.now(); if (fn !== lf) { lf = fn; lt = now; } else if (now - lt > 500) { try { V.scene.render(); } catch (e) { /* 다음 번에 */ } lt = now; lf = V.scene.frameState.frameNumber; } }, 250);
+  let lastSend = 0;
+  setInterval(() => {
+    if (want && !touched && dist() > 1) apply(want);      // 엔진이 로딩 중·뒤에 카메라를 기본 위치로 되돌리거나 지형 높이가 늦게 와도, 사용자가 만지기 전까지는 우리 시점을 유지한다(벗어난 것이 보일 때만 다시 건다: 매초 setView 하지 않는다)
+    if (doneSent) return;
+    wantSample = true; V.scene.requestRender && V.scene.requestRender();
+    const pend = imgPending();      // 아직 안 온 지면 영상 조각 수(-1 = 알 수 없음)
+    const ok = seenQ && V.scene.globe.tilesLoaded && pend <= 0 && (() => { const pr = V.scene.primitives; for (let i = 0; i < pr.length; i++) { const p = pr.get(i); if (p && p.tilesLoaded === false) return false; } return true; })();      // 타일 요청이 실제로 있었고 모두 도착
+    okN = ok ? okN + 1 : 0;
+    const sec = (performance.now() - t0) / 1000, real = std >= 8 && want && (touched || dist() <= 1.5);      // 화면이 단색이 아니고 카메라가 맞아 있을 때(건물 모델만 먼저 와도 통과하므로 위 ok 가 영상 도착을 보증)
+    if (real) { realN++; if (!realT) realT = performance.now(); } else { realN = 0; realT = 0; }
+    const since = realT ? (performance.now() - realT) / 1000 : 0, low = want && want.agl < 200, settle = (low ? 8 : (want && want.hi ? 4 : 3));      // 낮은 시점은 건물 타일이 더 늦게 와서 더 기다린다. 개요(고도 1.5 km 이상, 넓은 장면)는 조각이 많아 한 번 더 여유
+    say({ t: 'progress', sec: Math.round(sec), has: !!want, std: Math.round(std * 10) / 10, real: realN, tl: !!ok, q: seenQ, pend, d: Math.round(dist() * 100) / 100 });
+    if (want && realN >= 2 && okN >= 2 && since >= settle) { doneSent = true; say({ t: 'done', sec: Math.round(sec), std: Math.round(std * 10) / 10 }); }
+  }, 1000);
+  ready.reset = () => { doneSent = false; realN = 0; realT = 0; okN = 0; resent = true; };
+}
+let resent = false;
+
+// 현재 카메라 -> 부모 (끌 때 쓰는 값)
+function snapshot() {
+  const c = V.camera.positionCartographic, lon = Cesium.Math.toDegrees(c.longitude), lat = Cesium.Math.toDegrees(c.latitude), g = ground(lon, lat);
+  return { lon, lat, h: c.height, g, agl: g == null ? null : c.height - g, heading: Cesium.Math.toDegrees(V.camera.heading), pitch: Cesium.Math.toDegrees(V.camera.pitch), touched };
+}
+function snapshotRef() {      // 개요: 보낸 때와 같은 지면점 좌표계에서 본 현재 카메라(위치 e,n,u 와 시선 방향) -> 부모가 같은 식으로 되돌린다
+  const sn = snapshot(); if (!want || !want.ref) return sn;
+  const r = want.ref, inv = Cesium.Matrix4.inverseTransformation(enuAt(r.lon, r.lat, want.T), new Cesium.Matrix4());
+  const p = Cesium.Matrix4.multiplyByPoint(inv, V.camera.positionWC, new Cesium.Cartesian3()), d = Cesium.Matrix4.multiplyByPointAsVector(inv, V.camera.directionWC, new Cesium.Cartesian3());
+  sn.rel = [p.x, p.y, p.z]; sn.dir = [d.x, d.y, d.z]; sn.ref = { lon: r.lon, lat: r.lat }; return sn;
+}
+
+// ---- 그림자 덮기(docs/VWORLD-OVERLAY.md '그림자 덮기'): 부모(우리 일조 엔진)가 계산한 그림자 링(위경도)을 투명 캔버스 하나에 합쳐 그려 브이월드 지면 위에 덮는다.
+// 방식 'prim'(기본) = 지면 클램프 사각형(GroundPrimitive) + 캔버스 재질(캔버스 두 장을 번갈아 갈아 끼움, 레이어 교체 깜박임 없음), 'img' = 단일 타일 영상 레이어(예비).
+// 엔진 시계(viewer.clock)도 같은 시각으로 맞춘다(태양 방향 일치). 엔진 자체 그림자(viewer.shadows)는 부모가 요청할 때만 켠다.
+const SHD = { mode: 'prim', alpha: 0.6, layer: null, prim: null, mat: null, cvs: [document.createElement('canvas'), document.createElement('canvas')], ci: 0, tcv: document.createElement('canvas'), pending: null, busy: false, rect: null, n: 0, shown: false, eng: false };
+function frames(n, ms) { return new Promise((res) => { let k = n, done = false; const fin = () => { if (done) return; done = true; try { rm(); } catch (e) { /* 이미 해제 */ } res(); }; const rm = V.scene.postRender.addEventListener(() => { if (--k <= 0) fin(); }); try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ } setTimeout(fin, ms || 700); }); }
+function engSun(center) {      // 브이월드 엔진이 쓰는 태양 방향(ENU 고도·방위, 도). 한 프레임 그린 뒤 uniformState 에서 읽는다
+  try {
+    V.scene.render(V.clock.currentTime); const s = V.scene.context.uniformState.sunDirectionWC, p = Cesium.Cartesian3.fromDegrees(center[0], center[1], 0), inv = Cesium.Matrix4.inverseTransformation(Cesium.Transforms.eastNorthUpToFixedFrame(p), new Cesium.Matrix4()), e = Cesium.Matrix4.multiplyByPointAsVector(inv, s, new Cesium.Cartesian3()), L = Cesium.Cartesian3.magnitude(e);
+    return { alt: Math.asin(e.z / L) / D2R, az: (Math.atan2(e.x, e.y) / D2R + 360) % 360 };
+  } catch (x) { return null; }
+}
+function drawShadow(m) {
+  const cv = SHD.cvs[SHD.ci = 1 - SHD.ci]; if (cv.width !== m.cw || cv.height !== m.ch) { cv.width = m.cw; cv.height = m.ch; }
+  const cx = cv.getContext('2d'); cx.clearRect(0, 0, cv.width, cv.height); const r = m.rect, W = m.cw / (r[2] - r[0]), Hh = m.ch / (r[3] - r[1]), col = 'rgb(14,25,69)';
+  if (m.tm) {      // 지형 그림자(작은 마스크를 부드럽게 늘려 그린다)
+    const t = SHD.tcv; t.width = m.tm.nx; t.height = m.tm.ny; const tx = t.getContext('2d'), id = tx.createImageData(m.tm.nx, m.tm.ny), mk = m.tm.m;
+    for (let i = 0; i < mk.length; i++) { id.data[4 * i] = 14; id.data[4 * i + 1] = 25; id.data[4 * i + 2] = 69; id.data[4 * i + 3] = mk[i]; }
+    tx.putImageData(id, 0, 0); cx.imageSmoothingEnabled = true; cx.drawImage(t, 0, 0, cv.width, cv.height);
+  }
+  if (m.polys && m.counts) {
+    cx.fillStyle = col; cx.beginPath(); let k = 0; const P = m.polys;      // 100 개씩 끊어 채운다(한 경로에 6천 개를 넣으면 채우기가 100배 느렸다)
+    for (let q = 0; q < m.counts.length; q++) {
+      const n = m.counts[q]; for (let i = 0; i < n; i++, k++) { const x = (P[2 * k] - r[0]) * W, y = (r[3] - P[2 * k + 1]) * Hh; if (i === 0) cx.moveTo(x, y); else cx.lineTo(x, y); } cx.closePath();
+      if (q % 100 === 99) { cx.fill('nonzero'); cx.beginPath(); }
+    }
+    cx.fill('nonzero');
+  }
+  return cv;
+}
+function shHide() { try { if (SHD.layer) SHD.layer.show = false; if (SHD.prim) SHD.prim.show = false; } catch (e) { /* 무시 */ } SHD.shown = false; try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ } }
+async function showImg(cv, rect) {
+  const blob = await new Promise((r) => cv.toBlob(r, 'image/png')), url = URL.createObjectURL(blob), rc = Cesium.Rectangle.fromDegrees(rect[0], rect[1], rect[2], rect[3]);
+  let prov; if (Cesium.SingleTileImageryProvider.fromUrl) prov = await Cesium.SingleTileImageryProvider.fromUrl(url, { rectangle: rc }); else { prov = new Cesium.SingleTileImageryProvider({ url, rectangle: rc }); if (prov.readyPromise) await prov.readyPromise; }
+  const nl = new Cesium.ImageryLayer(prov, { alpha: SHD.layer ? 0.01 : SHD.alpha }); V.scene.imageryLayers.add(nl);      // 새 레이어는 거의 투명으로 먼저 올려 타일을 받게 하고, 몇 프레임 뒤 바꿔치기한다
+  if (SHD.layer) { await frames(4, 500); nl.alpha = SHD.alpha; const old = SHD.layer; SHD.layer = nl; await frames(1, 200); try { V.scene.imageryLayers.remove(old, true); } catch (e) { /* 무시 */ } }
+  else SHD.layer = nl;
+  SHD.layer.show = true; SHD.shown = true; setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+function showPrim(cv, rect) {
+  const rc = Cesium.Rectangle.fromDegrees(rect[0], rect[1], rect[2], rect[3]);
+  if (!SHD.prim || !SHD.rect || SHD.rect.join() !== rect.join()) {
+    if (SHD.prim) { try { V.scene.groundPrimitives.remove(SHD.prim); } catch (e) { /* 무시 */ } }
+    SHD.mat = Cesium.Material.fromType('Image', { image: cv, color: new Cesium.Color(1, 1, 1, SHD.alpha), transparent: true });
+    const ap = new Cesium.MaterialAppearance({ material: SHD.mat, flat: true, translucent: true });
+    SHD.prim = V.scene.groundPrimitives.add(new Cesium.GroundPrimitive({ geometryInstances: new Cesium.GeometryInstance({ geometry: new Cesium.RectangleGeometry({ rectangle: rc, vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat }) }), appearance: ap, classificationType: Cesium.ClassificationType.TERRAIN, asynchronous: false }));
+    SHD.rect = rect.slice();
+  } else { SHD.mat.uniforms.image = cv; SHD.mat.uniforms.color = new Cesium.Color(1, 1, 1, SHD.alpha); }
+  SHD.prim.show = true; SHD.shown = true; try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ }
+}
+async function applyShadow(m) {
+  const t0 = performance.now(); let eng = null;
+  try {
+    if (m.iso) { V.clock.shouldAnimate = false; V.clock.currentTime = Cesium.JulianDate.fromIso8601(m.iso); }
+    // 엔진 자체 그림자(viewer.shadows): 시험에서 켜면 브이월드 엔진이 렌더 오류(ShadowMap.createPotentiallyVisibleSet RangeError)를 내서, 오류 시 자동으로 끈다. 기본 꺼짐.
+    if (m.eng !== undefined && m.eng !== SHD.eng) { SHD.eng = !!m.eng; V.shadows = SHD.eng; if (SHD.eng && !SHD.engGuard) { SHD.engGuard = true; try { V.scene.renderError.addEventListener(() => { if (SHD.eng) { SHD.eng = false; try { V.shadows = false; } catch (x) { /* 무시 */ } say({ t: 'shack', engerr: true }); } }); } catch (x) { /* 무시 */ } } try { V.terrainShadows = SHD.eng ? Cesium.ShadowMode.ENABLED : Cesium.ShadowMode.DISABLED; } catch (e) { /* 무시 */ } }
+    SHD.alpha = m.alpha != null ? m.alpha : SHD.alpha;
+    if (m.off || !m.on) { shHide(); if (m.off) shvHide(); }
+    else { const cv = drawShadow(m); if (SHD.mode === 'prim' && !(Cesium.GroundPrimitive && Cesium.GroundPrimitive.isSupported(V.scene))) SHD.mode = 'img';      // 지면 클램프를 못 쓰면 영상 레이어 방식으로
+    if (SHD.mode === 'prim') showPrim(cv, m.rect); else await showImg(cv, m.rect); SHD.n++; }
+    if (m.measure && m.center) { await frames(3, 800); eng = engSun(m.center); }
+    else V.scene.requestRender && V.scene.requestRender();
+  } catch (e) { say({ t: 'shack', seq: m.seq, ms: Math.round(performance.now() - t0), err: String(e && e.message || e).slice(0, 120) }); return; }
+  say({ t: 'shack', seq: m.seq, ms: Math.round((performance.now() - t0) * 10) / 10, eng, mode: SHD.mode, n: SHD.n, shown: SHD.shown });
+}
+function shadowMsg(m) {
+  SHD.pending = m; if (SHD.busy) return; SHD.busy = true;
+  (async () => { while (SHD.pending) { const q = SHD.pending; SHD.pending = null; await applyShadow(q); } SHD.busy = false; })();
+}
+// ---- 3D 건물 위 그림자 부피: 부모가 보낸 쐐기(육면체 8점 × 개수)를 한 개의 닫힌 메시로 만들어 ClassificationPrimitive 로 3D 타일(브이월드 건물 모델) 표면에 분류 렌더링한다.
+// 한 개의 지오메트리·한 개의 색(알파 = 그림자 세기)이라 겹치는 부피도 한 번만 어둡다(스텐실). 높이는 우리 DEM 높이 + (브이월드 지형 - 우리 DEM) 보정 격자.
+const SHV = { prim: null, type: 'CESIUM_3D_TILE', offs: null, alpha: 0.6, n: 0, busy: false, pending: null, shown: false, col: [0.055, 0.1, 0.27] };
+function shvOffs(og) {
+  const N = og.N, v = new Float64Array(N * N); let sum = 0, cnt = 0;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const lon = og.rect[0] + (og.rect[2] - og.rect[0]) * i / (N - 1), lat = og.rect[1] + (og.rect[3] - og.rect[1]) * j / (N - 1), g = ground(lon, lat), d = g == null ? NaN : g - og.z[j * N + i];
+    v[j * N + i] = d; if (isFinite(d)) { sum += d; cnt++; }
+  }
+  const mean = cnt ? sum / cnt : -5; for (let i = 0; i < v.length; i++) if (!isFinite(v[i])) v[i] = mean;
+  SHV.offs = { rect: og.rect, N, v, mean, t: performance.now() };      // (건물별 높이 차 캐시 SHV.boc 는 비우지 않는다: getHeight 는 건물당 약 0.4 ms 라 처음 한 번만 600 ms, 이후 캐시)
+}
+function shvOffAt(lon, lat) {
+  const o = SHV.offs; if (!o) return -5; const N = o.N, fx = Math.min(N - 1.001, Math.max(0, (lon - o.rect[0]) / (o.rect[2] - o.rect[0]) * (N - 1))), fy = Math.min(N - 1.001, Math.max(0, (lat - o.rect[1]) / (o.rect[3] - o.rect[1]) * (N - 1))), i = Math.floor(fx), j = Math.floor(fy), u = fx - i, w = fy - j, v = o.v;
+  return (v[j * N + i] * (1 - u) + v[j * N + i + 1] * u) * (1 - w) + (v[(j + 1) * N + i] * (1 - u) + v[(j + 1) * N + i + 1] * u) * w;
+}
+function shvHide() { try { if (SHV.prim) SHV.prim.show = false; } catch (e) { /* 무시 */ } SHV.shown = false; try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ } }
+function shvColor(a) { return new Cesium.Color(SHV.col[0], SHV.col[1], SHV.col[2], Math.min(1, a)); }
+async function applyVol(m) {
+  const t0 = performance.now(); let n = 0;
+  try {
+    if (m.og && (!SHV.offs || performance.now() - SHV.offs.t > 20000)) shvOffs(m.og);
+    SHV.alpha = m.alpha != null ? m.alpha : SHV.alpha;
+    if (!m.on || !m.verts || !m.verts.length) { shvHide(); }
+    else {
+      const P = m.verts; n = P.length / 27; const nv = n * 8, pos = new Float64Array(nv * 3), A_ = 6378137, E2 = 0.00669437999014;      // WGS84 직접 계산(Cartesian3.fromDegrees 를 정점마다 부르면 느렸다)
+      let missed = 0; const bo = SHV.boc || (SHV.boc = new Map());      // 건물별 지형 높이 캐시: 건물이 수천 동인 동은 처음 계산이 오래 걸려(건물당 0.4 ms) 한 번에 40 ms 까지만 직접 재고 나머지는 격자 보간값으로 그리고, 곧바로 다시 불러 캐시를 채운다(SHV.boc 크기는 건물 수, 건물당 숫자 하나)
+      SHV.missed = 0; for (let w = 0; w < n; w++) { const o = 27 * w, blon = P[o], blat = P[o + 1], bz = P[o + 2], key = blon.toFixed(6) + blat.toFixed(6); let off = bo.get(key); if (off === undefined) { if (performance.now() - t0 > 40) { off = shvOffAt(blon, blat); missed++; } else { const g = ground(blon, blat); off = g == null ? shvOffAt(blon, blat) : g - bz; bo.set(key, off); } }      // 건물 기준점의 (브이월드 지형 - 우리 DEM) 차: 모델은 자기 지형 위에 서 있으므로 건물마다 맞춘다
+        for (let k = 0; k < 8; k++) { const i = 8 * w + k, q = o + 3 + 3 * k, lon = P[q], lat = P[q + 1], h = P[q + 2] + off + (shvOffAt(lon, lat) - shvOffAt(blon, blat)), p = lat * D2R, l = lon * D2R, sp = Math.sin(p), cp = Math.cos(p), N = A_ / Math.sqrt(1 - E2 * sp * sp); pos[3 * i] = (N + h) * cp * Math.cos(l); pos[3 * i + 1] = (N + h) * cp * Math.sin(l); pos[3 * i + 2] = (N * (1 - E2) + h) * sp; } }
+      const tb = performance.now() - t0, idx = new Uint32Array(n * 36); let k = 0, nflip = 0;
+      // 닫힌 육면체의 면 방향을 모두 같은 쪽(바깥)으로 맞춘다. 이전에는 양쪽 마개 면이 옆면과 반대 방향이라 분류(스텐실 z-fail)가 부피 밖의 표면까지 어둡게 칠했다(거짓 양성 약 25~30 %의 원인).
+      // 마개: A 끝 (0,2,1),(0,3,2) / B 끝 (4,5,6),(4,6,7), 옆면은 (c,c1,B c1),(c,B c1,B c). 쐐기마다 부호 있는 부피를 재서 안팎이 뒤집힌 것은 삼각형을 모두 뒤집는다.
+      for (let w = 0; w < n; w++) {
+        const b0 = 8 * w, tri = [[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7]]; for (let c = 0; c < 4; c++) { const c1 = (c + 1) % 4; tri.push([c, c1, 4 + c1], [c, 4 + c1, 4 + c]); }
+        let vol = 0; const o0 = 3 * b0; for (const t of tri) { const i0 = 3 * (b0 + t[0]), i1 = 3 * (b0 + t[1]), i2 = 3 * (b0 + t[2]); const ax = pos[i0] - pos[o0], ay = pos[i0 + 1] - pos[o0 + 1], az = pos[i0 + 2] - pos[o0 + 2], bx = pos[i1] - pos[o0], by = pos[i1 + 1] - pos[o0 + 1], bz = pos[i1 + 2] - pos[o0 + 2], cx = pos[i2] - pos[o0], cy = pos[i2 + 1] - pos[o0 + 1], cz = pos[i2 + 2] - pos[o0 + 2]; vol += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx); }
+        const fl = vol < 0; if (fl) nflip++; for (const t of tri) { idx[k++] = b0 + t[0]; idx[k++] = b0 + (fl ? t[2] : t[1]); idx[k++] = b0 + (fl ? t[1] : t[2]); }
+      }
+      SHV.nflip = nflip; SHV.missed = missed; SHV.refineM = missed ? m : null;
+      const geom = new Cesium.Geometry({ attributes: { position: new Cesium.GeometryAttribute({ componentDatatype: Cesium.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values: pos }) }, indices: idx, primitiveType: Cesium.PrimitiveType.TRIANGLES, boundingSphere: Cesium.BoundingSphere.fromVertices(pos) });
+      const np = new Cesium.ClassificationPrimitive({ geometryInstances: [new Cesium.GeometryInstance({ geometry: geom, attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(shvColor(SHV.alpha)) }, id: 'shv' })], classificationType: Cesium.ClassificationType[SHV.type], asynchronous: false, compressVertices: false, interleave: false });
+      V.scene.primitives.add(np); let rt0 = 0; const ra = V.scene.preRender.addEventListener(() => { rt0 = performance.now(); }), rb = V.scene.postRender.addEventListener(() => { if (rt0) { SHV.rms = performance.now() - rt0; rt0 = 0; } }); setTimeout(() => { try { ra(); rb(); } catch (e) { /* 무시 */ } }, 1500); SHV.tb = tb; const old = SHV.prim; SHV.prim = np; SHV.shown = true;
+      if (old) { await frames(2, 400); try { V.scene.primitives.remove(old); } catch (e) { /* 무시 */ } }
+      else await frames(1, 300);
+      try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ }      // 요청 시에만 그리는 엔진: 교체 직후 한 번 더 그려 달라고 한다
+    }
+  } catch (e) { say({ t: 'shack', vol: true, err: String(e && e.message || e).slice(0, 160), ms: Math.round(performance.now() - t0) }); return; }
+  say({ t: 'shack', vol: true, missed: SHV.missed || 0, nb: SHV.boc ? SHV.boc.size : 0, ms: Math.round((performance.now() - t0) * 10) / 10, build: Math.round((SHV.tb || 0) * 10) / 10, rms: Math.round((SHV.rms || 0) * 10) / 10, n, shown: SHV.shown, type: SHV.type });
+}
+function shvWarm(m) {      // 건물별 지형 높이 캐시를 20 ms 씩 끊어 채우고(메시는 다시 만들지 않음) 다 채우면 한 번만 다시 그린다
+  const P = m.verts, n = P ? P.length / 27 : 0, bo = SHV.boc || (SHV.boc = new Map()); let w = 0;
+  const step = () => {
+    if (SHV.pending) return; const t1 = performance.now();
+    for (; w < n && performance.now() - t1 < 20; w++) { const o = 27 * w, key = P[o].toFixed(6) + P[o + 1].toFixed(6); if (!bo.has(key)) { const g = ground(P[o], P[o + 1]); bo.set(key, g == null ? shvOffAt(P[o], P[o + 1]) : g - P[o + 2]); } }
+    if (w < n) setTimeout(step, 8); else if (!SHV.pending && !SHV.busy) volMsg(m);
+  };
+  setTimeout(step, 30);
+}
+function volMsg(m) { SHV.pending = m; if (SHV.busy) return; SHV.busy = true; (async () => { while (SHV.pending) { const q = SHV.pending; SHV.pending = null; await applyVol(q); } SHV.busy = false; if (SHV.refineM && !SHV.pending) { const r = SHV.refineM; SHV.refineM = null; shvWarm(r); } })(); }
+window.addEventListener('message', (e) => {
+  if (e.origin !== location.origin || !e.data || !e.data.vwo || !V) return;
+  const m = e.data;
+  if (m.t === 'cam') { touched = false; apply(m.cam); if (ready.reset) ready.reset(); }
+  else if (m.t === 'get') say({ t: 'snap', id: m.id, snap: snapshotRef() });
+  else if (m.t === 'wc') wc = !!m.on;
+  else if (m.t === 'lock') { lockLook = !!m.on; V.scene.screenSpaceCameraController.enableInputs = !lockLook; touched = false; }
+  else if (m.t === 'ping') say({ t: 'ready' });
+  else if (m.t === 'shadow') shadowMsg(m);
+  else if (m.t === 'shvol') volMsg(m);
+  else if (m.t === 'shvtype') { SHV.type = m.type; }
+  else if (m.t === 'shstyle') { SHD.alpha = m.alpha; try { if (SHD.layer) SHD.layer.alpha = SHD.alpha; SHV.alpha = m.alpha; if (SHV.prim && SHV.prim.ready) { const at = SHV.prim.getGeometryInstanceAttributes('shv'); if (at) at.color = Cesium.ColorGeometryInstanceAttribute.toValue(shvColor(SHV.alpha)); } if (SHD.mat) SHD.mat.uniforms.color = new Cesium.Color(1, 1, 1, SHD.alpha); V.scene.requestRender && V.scene.requestRender(); } catch (x) { /* 무시 */ } }
+  else if (m.t === 'shmode') { SHD.mode = m.mode === 'prim' ? 'prim' : 'img'; shHide(); }
+});
+</script>
+</body>
+</html>

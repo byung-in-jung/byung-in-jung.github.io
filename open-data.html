@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#fafafa">
+<meta name="description" content="볕결 세종 일조 지도에 사용한 공개 자료, 높이 추정 범위와 ODbL 라이선스 안내입니다.">
+<title>자료와 라이선스 · 볕결 세종</title>
+<style>
+:root{font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;color:#23342b;background:#f6f3e9}*{box-sizing:border-box}body{margin:0;background:#fafafa}.page{max-width:850px;margin:auto;padding:26px 24px 58px}.top{display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid #e8e6db;border-radius:999px;background:#fffdf8d9}.top a{color:#294c3b;font-size:13px;font-weight:750;text-decoration:none}.brand{margin-right:auto;font-size:15px;font-weight:850}.hero{padding:56px 5px 24px}.eyebrow{color:#55765a;font-size:10px;font-weight:850;letter-spacing:.15em}.hero h1{margin:12px 0;font-family:"Iowan Old Style","Batang",Georgia,serif;font-size:clamp(36px,7vw,58px);line-height:1.05;letter-spacing:-.065em;font-weight:600}.hero p{max-width:650px;color:#6c776d;font-size:14px;line-height:1.9}.card{margin-top:12px;padding:24px;border:1px solid #e5e5d9;border-radius:22px;background:#fffefa;box-shadow:0 18px 48px #283a2910}.card h2{margin:0 0 12px;font-size:17px;letter-spacing:-.035em}.card p,.card li{color:#59685e;font-size:13px;line-height:1.85}.card ul{padding-left:20px}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid #dfe4d8;border-radius:999px;background:#fffefa;color:#23342b;font-size:12px;font-weight:750;text-decoration:none}.button.primary{background:#294c3b;border-color:#294c3b;color:white}.chip{display:inline-block;margin:2px 5px 2px 0;padding:6px 10px;border-radius:999px;background:#e9edd9;color:#294c3b;font-size:10px;font-weight:800}.note{padding:14px 16px;border-radius:14px;background:#fbf4df;color:#69582f;font-size:11px;line-height:1.75}.footer{margin-top:20px;color:#667368;font-size:10px;line-height:1.8}.footer a{color:#55765a}@media(max-width:600px){.page{padding:17px 13px 36px}.hero{padding:43px 3px 17px}.card{padding:19px;border-radius:18px}}
+/*adflow-skin*/body{background:#fafafa!important}.hero h1{font-size:clamp(32px,5.5vw,48px)}.top{box-shadow:0 1px 2px #0f172a0a}:root{color:#111827;background:#fafafa}body{background:#fafafa}
+.top{background:#fff;border-color:#e5e7eb}.top a{color:#111827}.eyebrow{color:#6b7280}
+.hero h1{font-family:inherit;font-weight:900;letter-spacing:-.04em}.hero p{color:#4b5563}
+.card{border:1px solid #e5e7eb;border-radius:20px;background:#fff;box-shadow:0 24px 80px #0f172a14}.card p,.card li{color:#4b5563}
+.button{border-color:#e5e7eb;border-radius:14px;background:#fff;color:#111827}.button.primary{background:linear-gradient(180deg,#111827,#020617);border-color:transparent;color:#fff}
+.chip{background:#f3f4f6;color:#111827}.note{background:#f9fafb;border:1px solid #e5e7eb;color:#4b5563}.footer{color:#6b7280}.footer a{color:#111827}
+</style>
+</head>
+<body>
+<main class="page">
+  <nav class="top" aria-label="자료 안내 메뉴"><a class="brand" href="index.html">☀ 볕결 세종</a><a href="index.html#map">전국 지도</a><a href="regions/36110-세종특별자치시/index.html#sun=1&shadow=1">세종 일조 지도</a></nav>
+  <header class="hero"><span class="eyebrow">OPEN DATA · METHOD · LICENSE</span><h1>자료를 열어두고,<br>추정은 분명하게.</h1><p>볕결은 공개 지도 자료로 세종 행복도시 중심부의 건물 배치와 시간대별 햇빛을 살펴봅니다. 아래에서 사용 자료와 결과의 범위를 확인할 수 있습니다.</p><span class="chip">세종 중심부 6km 분석창</span><span class="chip">중심 건물 3,490동</span><span class="chip">OSM 기반 · 높이 일부 추정</span></header>
+  <section class="card"><h2>공개 지도자료</h2><p>다운로드 GeoJSON은 OpenStreetMap에서 가져와 가공한 건물 윤곽 3,490동, 분석창 가장자리 맥락 건물 493동, 도로·녹지·물길을 담습니다. 이 수치는 이 파일의 구성 수량이며, 아래 21개 동별 3D 화면의 건물 개수와는 범위가 다릅니다. 동별 화면은 건물대장·브이월드 GIS·OSM 등 별도 건물 자료와 높이 정보를 함께 사용하며, 건물 선택창에서 해당 건물의 높이 출처를 확인할 수 있습니다.</p><div class="actions"><a class="button primary" href="data/sejong-osm.geojson" download>GeoJSON 내려받기</a><a class="button" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap 저작권·ODbL</a></div></section>
+  <section class="card" id="public-imagery"><h2>3D 위성 질감</h2><p>지형 위에 브이월드 위성영상을 입혀 실제 도로·공원·건물 배치를 함께 살펴볼 수 있습니다. 세종시 21개 동의 생활권 화면과 행복도시 개요 지도에 적용했습니다. 영상은 지형에 맞춰 표시되며 촬영 시점은 지도와 다를 수 있습니다.</p><p>출처: 위성영상 브이월드(국토교통부, VWORLD). 일조·그림자 수치는 3D 건물과 지형을 이용한 참고 계산입니다.</p></section><section class="card"><h2>라이선스와 출처</h2><p>© OpenStreetMap contributors. 다운로드 GeoJSON과 화면에서 사용한 OSM 기반 자료에는 Open Database License 1.0(ODbL)이 적용됩니다. 출처를 표시하고 OSM 기반 데이터베이스를 수정·공유할 때는 ODbL 조건을 확인해 주세요. 이 안내를 건축물대장·브이월드 등 별도 자료의 라이선스까지 포괄하는 것으로 해석하면 안 됩니다. 동별 화면의 별도 자료는 각 제공기관의 이용 조건을 따릅니다.</p><p><b>출처 표기 예시:</b> © OpenStreetMap contributors · 볕결 가공자료(ODbL 1.0)</p><p>지형은 AWS Terrain Tiles의 SRTM 계열 자료를 사용합니다. 지형 타일의 해상도는 약 30m이며, 최근 절토·성토 등 공사 이후 변화는 반영되지 않을 수 있습니다.</p></section>
+  <section class="card"><h2>건물 높이와 일조 결과</h2><ul><li>동별 3D 화면은 21개 동 자료를 각각 표시합니다. 건물 높이는 건축물대장(건축HUB)의 높이·층수, 브이월드 건축물정보의 층수 환산, OSM 높이 태그, 또는 자료가 없을 때의 추정값을 사용합니다.</li><li>같은 필지 면적으로 연결하거나 같은 단지 층수로 보완한 값도 추정으로 표시합니다. 높이 자료가 있다고 해서 모두 현장 실측값인 것은 아닙니다.</li><li>건물 선택 후 ‘높이 출처 보기’를 켜면 건물별 자료 종류와 추정 여부를 확인할 수 있습니다. 기존 3,983동 수치는 다운로드 GeoJSON에만 해당하므로 동별 3D 화면의 건물 수나 높이 출처 비율로 읽지 마세요.</li><li>해의 방향과 위치는 날짜·시각·좌표로 계산하고, 주변 지형과 3D 건물 윤곽으로 직사광 그림자를 살펴봅니다. 나무, 발코니, 처마, 창 방향·층별 실제 조건과 확산광은 충분히 반영되지 않습니다.</li></ul><div class="note">일조·그림자 표시는 공개 자료와 계산 규칙을 이용한 참고 모델입니다. 실측이나 법적 일조권 판정이 아니며, 건물별 자료 누락·추정으로 실제와 다를 수 있습니다.</div></section>
+  <footer class="footer">자료 범위는 세종특별자치시 전체가 아니라 행복도시 중심부 6km 분석창입니다. <a href="index.html">전국 지도에서 돌아가기</a></footer>
+</main>
+</body>
+</html>
