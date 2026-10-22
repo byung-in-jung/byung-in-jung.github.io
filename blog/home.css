@@ -204,3 +204,4 @@ body.feed-view .centered-top{padding-top:0!important}
   #bg-home .bg-say{left:12px;right:12px;bottom:72px;transform:translateY(8px);max-width:none}
   #bg-home .bg-say.on{transform:none}
 }
+#bg-home .bg-chrome.no-sat .bg-seg,#bg-home .bg-chrome.no-sat .bg-seg+.bg-sep{display:none}

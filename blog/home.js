@@ -129,8 +129,8 @@
     setTimeout(updateFade, 250);
     if (changed) { nameEl.classList.add('swap'); setTimeout(function () { nameEl.textContent = name; nameEl.classList.remove('swap'); }, 160); }
     var u = viewerUrl(name, hash);
-    stages(true, first); setSeg('loading');
-    frame.title = name + ' 3D 일조 지도'; live.textContent = name + ' 지도를 불러옵니다'; frame.src = u; fs.href = u; badge.style.display = 'flex';
+    var plain = name === '행복도시 전체'; badge.classList.toggle('no-sat', plain); stages(true, first); setSeg(plain ? 'off' : 'loading');
+    frame.onload = plain ? function () { setTimeout(function () { stages(false); }, 1500); } : null; frame.title = name + ' 3D 일조 지도'; live.textContent = name + ' 지도를 불러옵니다'; frame.src = u; fs.href = u; badge.style.display = 'flex';
     try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
   }
   shareBtn.addEventListener('click', function () {
