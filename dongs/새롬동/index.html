@@ -5733,5 +5733,7 @@ function watchSun(){var p=document.getElementById('sun-panel');if(!p){setTimeout
 watchSun();
 var mv=false;['pointerdown','wheel','touchstart','keydown'].forEach(function(e){document.addEventListener(e,function(){if(mv)return;mv=true;try{parent.postMessage({type:'vw-moved'},'https://scity3d.blogspot.com')}catch(x){}},{capture:true,passive:true})});
 window.addEventListener('hashchange',function(){var m=/[#&]view=(-?[d.]+),(-?[d.]+),([d.]+),(-?[d.]+),(-?[d.]+)/.exec(location.hash);if(m&&window.__fmView)window.__fmView(+m[1],+m[2],+m[3],+m[4],+m[5])});
+
+;(function(){if(/[#&]view=/.test(location.hash))return;var tries=0,iv=setInterval(function(){if(++tries>60){clearInterval(iv);return}if(!window.__fmView||!window.__V)return;clearInterval(iv);try{var s=document.getElementById('data'),D=JSON.parse(s.textContent),r=D.dong;if(!r||r.length<6)return;var sx=0,sy=0,n=r.length/2,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(var i=0;i<r.length;i+=2){var x=r[i]/10,y=r[i+1]/10;sx+=x;sy+=y;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}var ext=Math.max(x1-x0,y1-y0),d=Math.min(1800,Math.max(600,ext*1.1));window.__fmView(sx/n,sy/n,d,0.55,0.62)}catch(e){}},100)})();
 })();</script></body>
 </html>
