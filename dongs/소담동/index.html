@@ -2698,7 +2698,7 @@ ${sBars(Object.assign({ noDir }, A))}`;
 (function (root) {
   'use strict';
   const D2R = Math.PI / 180;
-  const EYE = 1.4;                                   // 눈높이: 해당 층 슬래브 위 1.4 m (일조 점 평가는 1.2 m — 0.2 m 차이는 일조 시간에 영향이 없음)
+  const EYE = 1.5;                                   // 눈높이: 해당 층 슬래브 위 1.4 m (일조 점 평가는 1.2 m — 0.2 m 차이는 일조 시간에 영향이 없음)
   const ELEVS = [0, 5, 10, 15, 25, 40, 60];          // 고도각(도): 7개, 방위 61개와 곱해 427개 시선
   const DIRS8 = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
   const FOV0 = 75, FOV_MIN = 60, FOV_MAX = 95;
@@ -4591,7 +4591,8 @@ function windowViewStart(w) {
   if (!WIN.on) { WIN.saved = { mode: S.mode, V: { ...V }, WK: { ...WK } }; WIN.prevB = (card.style.display !== 'none' && window.__fmCardB) || null; }
   if (S.mode !== 'walk') setMode('walk', { x: w.pt.x, y: w.pt.y });
   const first = !WIN.on;
-  WK.x = w.pt.x; WK.y = w.pt.y; WK.zAbs = w.eyeZ != null ? w.eyeZ : w.pt.z; WK.yaw = w.az != null ? -w.az * Math.PI / 180 : Math.atan2(-w.pt.nx, w.pt.ny); WK.pitch = 0; WK.lock = true; WIN.yaw0 = WK.yaw; WIN.on = true; if (!FOV_WIN) FOV_WIN = 75;      // 눈높이 = 해당 층 슬래브 + 1.4 m, 화각 기본 75도(조망 카드에서 60–95)
+  { const _a = (w.az != null ? w.az : Math.atan2(w.pt.nx, w.pt.ny) * 180 / Math.PI) * Math.PI / 180; WK.x = w.pt.x - Math.sin(_a) * 0.6; WK.y = w.pt.y - Math.cos(_a) * 0.6; }      // 창 바로 앞이 아니라 방 안쪽 반보(0.6 m) 뒤에서 본다
+  WK.zAbs = w.eyeZ != null ? w.eyeZ : w.pt.z; WK.yaw = w.az != null ? -w.az * Math.PI / 180 : Math.atan2(-w.pt.nx, w.pt.ny); WK.pitch = 0; WK.lock = true; WIN.yaw0 = WK.yaw; WIN.on = true; if (!FOV_WIN) FOV_WIN = 75;      // 눈높이 = 해당 층 슬래브 + 1.4 m, 화각 기본 75도(조망 카드에서 60–95)
   $('walkpad').style.display = 'none'; hideHint(); if (isMobile() && SUN) SUN.close(); if (typeof closeCard === 'function') { closeCard(); hlGroup.clear(); }      // phones: the sun panel is a sheet that would cover the view (the sun clock stays)
   const hmK = (h) => { if (h == null) return '–'; const m = Math.round(h * 60); return Math.floor(m / 60) + '시간' + (m % 60 ? ' ' + (m % 60) + '분' : ''); }, h1 = hmK(w.hours), h2 = hmK(w.wHours);
   const sc = w.scoreWinter != null ? w.scoreWinter : w.score;
