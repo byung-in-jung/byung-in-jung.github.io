@@ -5178,7 +5178,7 @@ const VWO = (() => {
     } else { send({ t: 'cam', cam: ourCam() }); }      // 다시 켤 때: 새 카메라를 보내면 iframe 이 영상이 맞는지 다시 확인하고 'done' 을 다시 보낸다
     show(false, true);
   }
-  function loaded() { if (st.state !== 'loading') return; if (!st.moved && st.intent && S.mode !== 'walk') { Object.assign(V, st.intent); tween = null; try { send({ t: 'cam', cam: ourCam() }); } catch (e) { /* 곧 다시 보냄 */ } }      // 덮기 시작 뒤 사용자가 만지지 않았으면 켤 때의 시점(위치·각도·높이)을 그대로 유지 st.state = 'on'; st.wasDone = true; clearInterval(st.tm); label(); veil(false); show(true); showBar(true, true); say('브이월드가 위에 덮여 있어요. 끌어서 움직여 보세요.'); shStart(); }
+  function loaded() { if (st.state !== 'loading') return; if (!st.moved && st.intent && S.mode !== 'walk') { Object.assign(V, st.intent); tween = null; try { send({ t: 'cam', cam: ourCam() }); } catch (e) { /* 곧 다시 보냄 */ } } /* 덮기 시작 뒤 사용자가 만지지 않았으면 켤 때의 시점을 그대로 유지 */ st.state = 'on'; st.wasDone = true; clearInterval(st.tm); label(); veil(false); show(true); showBar(true, true); say('브이월드가 위에 덮여 있어요. 끌어서 움직여 보세요.'); shStart(); }
   function retry() { const was = st.tries; teardown(); st.tries = was; turnOn(true); }
   async function turnOff(silent) {
     const was = st.on; let sn = null;
