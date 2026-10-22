@@ -60,7 +60,7 @@
   var fs = badge.querySelector('a.bg-fs'), shareBtn = badge.querySelector('.bg-share'), nameEl = badge.querySelector('.bg-name'), seg = badge.querySelector('.bg-seg'), segBtn = { map: seg.querySelector('[data-v=map]'), sat: seg.querySelector('[data-v=sat]') };
   var say = el('div', 'bg-say'); say.setAttribute('role', 'status');
   stage.appendChild(frame); stage.appendChild(loader); stage.appendChild(badge); stage.appendChild(say);
-  var foot = el('footer', 'bg-foot', '<span class="bg-fl">행정경계 © OpenStreetMap contributors · 지도 이용 안내는 지도 아래 '자세히'</span><span class="bg-fr"><button type="button" class="bg-link" data-act="credits">사진 출처</button><span class="bg-brand"><i></i>볕결 세종</span></span>');
+  var foot = el('footer', 'bg-foot', '<span class="bg-fl">행정경계 © OpenStreetMap contributors · 지도 이용 안내는 지도 아래 “자세히”</span><span class="bg-fr"><button type="button" class="bg-link" data-act="credits">사진 출처</button><span class="bg-brand"><i></i>볕결 세종</span></span>');
   var dlg = el('dialog', 'bg-dlg', '<form method="dialog"><h2>사진 출처</h2><p>지도 옆 사진은 위키미디어 커먼즈의 자유 이용 사진입니다.</p><ul>' + PHOTOS.map(function (p) { return '<li><b>' + esc(p.t) + '</b> · ' + esc(p.a) + ' · <a href="' + p.u + '" target="_blank" rel="noopener">' + p.l + '</a></li>'; }).join('') + '</ul><button class="bg-dlg-x">닫기</button></form>');
   foot.querySelector('[data-act=credits]').addEventListener('click', function () { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); });
   var strip = el('div', 'bg-strip', PHOTOS.slice(0, 4).map(card).join(''));
