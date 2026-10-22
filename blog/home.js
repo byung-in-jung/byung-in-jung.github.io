@@ -239,6 +239,6 @@
     root.style.maxWidth = 'none'; root.style.width = W + 'px'; root.style.marginLeft = ((vw - W) / 2 - l) + 'px';
     moveInd(false);
   }
-  requestAnimationFrame(function () { root.classList.add('bg-in'); });
+  setTimeout(function () { root.classList.add('bg-in'); }, 30);
   fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit); setTimeout(fit, 600); setTimeout(fit, 2000);
 })();
