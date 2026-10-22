@@ -5834,7 +5834,7 @@ tg.addEventListener('click',function(){var v=vwo();if(!v||!can()){toast('이 주
  if(cur==='loading')return;
  if(cur==='on'){v.turnOff();toast('브이월드를 껐어요',1800)}else{v.turnOn();toast('브이월드 3D를 불러오는 중…',2000)}setTimeout(tick,60)});
 function ready(){var l=document.getElementById('loading');if(!l)return true;var c=getComputedStyle(l);return c.display==='none'||c.visibility==='hidden'||c.opacity==='0'||l.classList.contains('hide')}
-var tried=false,iv=setInterval(function(){if(tried){clearInterval(iv);return}if(!can()||!ready())return;tried=true;clearInterval(iv);if(/[?&#]vw=0/.test(location.search+location.hash))return;setTimeout(function(){if(vwo().st&&!vwo().st.on)vwo().turnOn()},700)},400);
+var pi=setInterval(function(){if(ready()){clearInterval(pi);try{parent.postMessage({type:"vw-ready"},"https://scity3d.blogspot.com")}catch(e){}}},300);var tried=false,iv=setInterval(function(){if(tried){clearInterval(iv);return}if(!can()||!ready())return;tried=true;clearInterval(iv);if(/[?&#]vw=0/.test(location.search+location.hash))return;setTimeout(function(){if(vwo().st&&!vwo().st.on)vwo().turnOn()},700)},400);
 function watchSun(){var p=document.getElementById('sun-panel');if(!p){setTimeout(watchSun,600);return}
  var last=!p.classList.contains('sun-hidden');
  new MutationObserver(function(){var open=!p.classList.contains('sun-hidden');if(open===last)return;last=open;var v=vwo();
