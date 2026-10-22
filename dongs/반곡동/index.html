@@ -4587,6 +4587,7 @@ function windowCover() {      // 조망 요약용 물·녹지 격자(D.areas 폴
   return WindowView.coverRaster({ x0: TR.x0, y0: TR.y0, x1, y1, res, polys, cells });
 }
 function windowViewStart(w) {
+  WIN.lastW = w;
   if (WPICK.on) walkPickEnd();
   if (!WIN.on) { WIN.saved = { mode: S.mode, V: { ...V }, WK: { ...WK } }; WIN.prevB = (card.style.display !== 'none' && window.__fmCardB) || null; }
   if (S.mode !== 'walk') setMode('walk', { x: w.pt.x, y: w.pt.y });
@@ -4605,7 +4606,7 @@ function windowViewEnd() {
   if (!WIN.on) return; const sv = WIN.saved; WK.lock = false; WK.zAbs = null; WIN.on = false; WIN.saved = null; FOV_WIN = 0; if (SUN) SUN.windowEnded();
   $('winBar').style.display = 'none'; document.body.classList.remove('fm-window');
   if (sv && sv.mode === 'walk') { Object.assign(WK, sv.WK, { lock: false, zAbs: null }); $('walkpad').style.display = 'flex'; }
-  else { setMode('orbit'); if (sv) Object.assign(V, sv.V); }
+  else { setMode('orbit'); if (sv) Object.assign(V, sv.V); const lw = WIN.lastW; if (lw && lw.pt) { V.tx = lw.pt.x; V.tz = -lw.pt.y; V.ty = (lw.pt.z != null ? lw.pt.z : hAt(lw.pt.x, lw.pt.y)); V.dist = Math.min(V.dist, 140); tween = null; } }      // 나갈 때는 눌렀던 창 지점을 중심으로 되돌아간다
   const pb = WIN.prevB; WIN.prevB = null; if (pb) { try { showBuilding(pb); } catch (e) { /* card stays closed */ } }      // 창가 시점을 시작할 때 열려 있던 건물 카드를 되살림(벽을 눌러 바로 들어온 경우는 카드 없음)
   syncUI(); try { if (window.__vwo) window.__vwo.resync(); } catch (e) { /* 덮기 꺼짐 */ }
 }
