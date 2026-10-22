@@ -6,87 +6,110 @@
   root.setAttribute('data-ready', '1');
 
   var VIEWER = 'https://byung-in-jung.github.io/';
-  var BLOG = 'https://scity3d.blogspot.com/p/';
   var ORIGIN = 'https://byung-in-jung.github.io';
   var FALLBACK = { n: '새롬동', h: '#view=-350.5,-404.3,450,0.55,0.62' };
-  var DONGS = [
-    ['행복도시 전체', 'sejong', '전체'], ['한솔동', 'hansol'], ['새롬동', 'saerom'], ['다정동', 'dajeong'], ['나성동', 'naseong'],
-    ['도담동', 'dodam'], ['어진동', 'eojin'], ['아름동', 'areum'], ['종촌동', 'jongchon'], ['고운동', 'goun'], ['소담동', 'sodam'],
-    ['보람동', 'boram'], ['대평동', 'daepyeong'], ['반곡동', 'bangok'], ['집현동', 'jiphyeon'], ['해밀동', 'haemil'],
-    ['산울동', 'sanul'], ['합강동', 'hapgang'], ['다솜동', 'dasom'], ['용호동', 'yongho'], ['누리동', 'nuri'], ['한별동', 'hanbyeol']
+  var DONGS = ['행복도시 전체', '한솔동', '새롬동', '다정동', '나성동', '도담동', '어진동', '아름동', '종촌동', '고운동', '소담동', '보람동', '대평동', '반곡동', '집현동', '해밀동', '산울동', '합강동', '다솜동', '용호동', '누리동', '한별동'];
+  var PHOTOS = [
+    { f: 'lake17.jpg', t: '세종호수공원 수상무대', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_17.jpg' },
+    { f: 'lib.jpg', t: '세종국립도서관', a: 'Minseong Kim', l: 'CC BY-SA 4.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_National_Library.jpg' },
+    { f: 'lake5.jpg', t: '호수공원 물놀이 광장', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_05.jpg' },
+    { f: 'lake9.jpg', t: '호수공원 산책길', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_09.jpg' }
   ];
-  var PHOTOS = {
-    l: [
-      { f: 'lake17.jpg', t: '세종호수공원 수상무대', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_17.jpg' },
-      { f: 'lib.jpg', t: '세종국립도서관', a: 'Minseong Kim', l: 'CC BY-SA 4.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_National_Library.jpg' }
-    ],
-    r: [
-      { f: 'lake5.jpg', t: '호수공원 물놀이 광장', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_05.jpg' },
-      { f: 'lake9.jpg', t: '호수공원 산책길', a: 'Youngjin', l: 'CC BY-SA 3.0', u: 'https://commons.wikimedia.org/wiki/File:Sejong_lake_park_190609_09.jpg' }
-    ]
-  };
-  var SELF = (function () { var s = document.currentScript; return s && s.src ? s.src.replace(/[^/]*$/, '') : 'https://byung-in-jung.github.io/blog/'; })();
+  var SELF = (function () { var s = document.currentScript; return s && s.src ? s.src.replace(/[^/]*$/, '') : VIEWER + 'blog/'; })();
+  var BASE = SELF.replace(/blog\/$/, '');
 
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function card(p) { return '<figure class="bg-pc"><img src="' + BASE + 'photos/' + p.f + '" alt="' + esc(p.t) + '" decoding="async" loading="lazy"><figcaption><b>' + esc(p.t) + '</b><small>' + esc(p.a) + ' · <a href="' + p.u + '" target="_blank" rel="noopener">' + p.l + '</a></small></figcaption></figure>'; }
 
   /* ---------- 마크업 ---------- */
   root.innerHTML = '';
-  var head = el('header', 'bg-head', '<h1 class="bg-title">볕결 세종</h1><p class="bg-sub">햇볕이 드는 동네를 3D로 둘러봅니다</p>');
+  var SUNARC = '<svg viewBox="0 0 56 30" aria-hidden="true"><path class="arc" d="M3 27 Q28 -14 53 27"/><circle class="dot" cx="28" cy="10" r="5"/></svg>';
+  var head = el('header', 'bg-head',
+    '<div class="bg-logo"><h1 class="bg-title">볕결<i aria-hidden="true"></i><span>세종</span></h1><p class="bg-sub">햇볕이 드는 동네를 3D로 둘러봅니다</p></div>' +
+    '<div class="bg-sun" aria-live="off">' + SUNARC + '<div><span class="bg-sun-t">—</span><small class="bg-sun-s"></small></div></div>');
+  var rail = el('div', 'bg-rail at-start');
+  var scroller = el('div', 'bg-scroll');
   var nav = el('nav', 'bg-nav'); nav.setAttribute('aria-label', '동 선택');
-  var btns = {};
-  DONGS.forEach(function (d) {
-    var b = el('button', 'bg-chip', esc(d[2] || d[0].replace(/동$/, ''))); b.type = 'button'; b.setAttribute('data-n', d[0]); b.title = d[0];
-    nav.appendChild(b); btns[d[0]] = b;
+  var ind = el('span', 'bg-ind'); ind.setAttribute('aria-hidden', 'true'); nav.appendChild(ind);
+  var btns = {}, order = [];
+  DONGS.forEach(function (n, i) {
+    var b = el('button', 'bg-chip' + (i === 0 ? ' all' : ''), i === 0 ? '전체<b>21</b>' : esc(n.replace(/동$/, ''))); b.type = 'button'; b.setAttribute('data-n', n); b.title = n; b.tabIndex = i === 0 ? 0 : -1;
+    nav.appendChild(b); btns[n] = b; order.push(n);
   });
+  scroller.appendChild(nav); rail.appendChild(scroller);
+
   var grid = el('div', 'bg-grid');
-  function side(k) {
-    var a = el('aside', 'bg-ad bg-ad-' + k); a.id = 'bg-ad-' + k; a.setAttribute('aria-label', '세종 명소 · 광고 자리');
-    PHOTOS[k].forEach(function (p) {
-      a.appendChild(el('figure', 'bg-pc', '<img src="' + SELF.replace(/blog\/$/, '') + 'photos/' + p.f + '" alt="' + esc(p.t) + '" decoding="async"><figcaption><b>' + esc(p.t) + '</b><small>' + esc(p.a) + ' · <a href="' + p.u + '" target="_blank" rel="noopener">' + p.l + '</a></small></figcaption>'));
-    });
-    return a;
-  }
+  var adL = el('aside', 'bg-ad bg-ad-l', card(PHOTOS[0]) + card(PHOTOS[1])); adL.id = 'bg-ad-l'; adL.setAttribute('aria-label', '세종 명소 · 광고 자리(왼쪽)');
+  var adR = el('aside', 'bg-ad bg-ad-r', card(PHOTOS[2]) + card(PHOTOS[3])); adR.id = 'bg-ad-r'; adR.setAttribute('aria-label', '세종 명소 · 광고 자리(오른쪽)');
   var main = el('main', 'bg-main');
   var stage = el('div', 'bg-stage');
   var frame = el('iframe', 'bg-frame'); frame.title = '선택한 동의 3D 지도'; frame.setAttribute('allow', 'fullscreen'); frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-pointer-lock');
-  var loader = el('div', 'bg-load', '<span class="bg-spin" aria-hidden="true"></span><span class="bg-load-t">내 위치를 확인하는 중입니다</span>'); loader.setAttribute('role', 'status');
-  var fs = el('a', 'bg-fs', '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>');
-  fs.target = '_blank'; fs.rel = 'noopener'; fs.setAttribute('aria-label', '전체 화면으로 열기'); fs.title = '전체 화면'; fs.style.display = 'none';
+  var loader = el('div', 'bg-load',
+    '<svg class="bg-sil" viewBox="0 0 600 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="#56632d" opacity=".35"><rect x="24" y="52" width="34" height="68"/><rect x="64" y="22" width="30" height="98"/><rect x="100" y="60" width="42" height="60"/><rect x="170" y="36" width="32" height="84"/><rect x="208" y="72" width="46" height="48"/><rect x="300" y="14" width="36" height="106"/><rect x="342" y="54" width="30" height="66"/><rect x="378" y="34" width="40" height="86"/><rect x="440" y="64" width="44" height="56"/><rect x="490" y="42" width="30" height="78"/><rect x="526" y="70" width="46" height="50"/></g></svg>' +
+    '<div class="bg-load-t">내 위치를 확인하는 중입니다</div><div class="bg-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div><div class="bg-load-n"></div>');
+  loader.setAttribute('role', 'status');
+  var badge = el('div', 'bg-badge',
+    '<a class="bg-fs" target="_blank" rel="noopener" aria-label="전체 화면으로 열기" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></a><span class="bg-name">—</span>');
+  badge.style.display = 'none';
+  var fs = badge.querySelector('.bg-fs'), nameEl = badge.querySelector('.bg-name');
   var say = el('div', 'bg-say'); say.setAttribute('role', 'status');
-  stage.appendChild(frame); stage.appendChild(loader); stage.appendChild(fs); stage.appendChild(say);
-  var src = el('p', 'bg-src', '참고용(실측·법적 판정 아님) · 위성영상: 브이월드(국토교통부) · 경계: © OpenStreetMap contributors');
-  main.appendChild(stage); main.appendChild(src);
-  grid.appendChild(side('l')); grid.appendChild(main); grid.appendChild(side('r'));
-  root.appendChild(head); root.appendChild(nav); root.appendChild(grid);
+  stage.appendChild(frame); stage.appendChild(loader); stage.appendChild(badge); stage.appendChild(say);
+  var foot = el('footer', 'bg-foot', '<span>참고용(실측·법적 판정 아님) · 위성영상: 브이월드(국토교통부) · 경계: © OpenStreetMap contributors</span><span class="bg-brand"><i></i>볕결 세종</span>');
+  var strip = el('div', 'bg-strip', PHOTOS.map(card).join(''));
+  main.appendChild(stage); main.appendChild(strip); main.appendChild(foot);
+  grid.appendChild(adL); grid.appendChild(main); grid.appendChild(adR);
+  root.appendChild(head); root.appendChild(rail); root.appendChild(grid);
 
   /* ---------- 상태 ---------- */
-  var cur = null, moved = false, started = false, lastLL = null, sayT = 0, loadT = 0, polys = null;
+  var cur = null, moved = false, started = false, lastLL = null, sayT = 0, stT = [], polys = null;
+  if (!window.ResizeObserver && !('transition' in document.documentElement.style)) root.classList.add('no-ind');
 
   function toast(m) { say.textContent = m; say.classList.add('on'); clearTimeout(sayT); sayT = setTimeout(function () { say.classList.remove('on'); }, 9000); }
-  function setLoading(on, text) {
-    clearTimeout(loadT);
-    if (text) loader.querySelector('.bg-load-t').textContent = text;
-    loader.classList.toggle('off', !on);
-    if (on) loadT = setTimeout(function () { loader.classList.add('off'); }, 20000);
+  function stages(on, first) {
+    stT.forEach(clearTimeout); stT = [];
+    var t = loader.querySelector('.bg-load-t'), dots = loader.querySelectorAll('.bg-dots i'), note = loader.querySelector('.bg-load-n');
+    function set(i, txt) { t.textContent = txt; for (var k = 0; k < dots.length; k++) dots[k].classList.toggle('on', k === i); }
+    if (!on) { loader.classList.add('off'); stage.classList.add('ready'); return; }
+    loader.classList.remove('off'); stage.classList.remove('ready'); note.textContent = '';
+    set(0, first ? '내 위치를 확인하는 중입니다' : (cur || '') + ' 지도를 불러오는 중입니다');
+    stT.push(setTimeout(function () { set(1, (cur === '행복도시 전체' ? '행복도시' : cur) + ' 3D 건물을 세우는 중입니다'); }, 3500));
+    stT.push(setTimeout(function () { set(2, '위성 사진을 입히는 중입니다'); }, 9000));
+    stT.push(setTimeout(function () { note.textContent = '조금 오래 걸리네요. 처음 한 번만 그래요.'; }, 14000));
+    stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); }, 28000));
   }
-  function viewerUrl(name) {
-    return name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/';
+  function viewerUrl(name) { return name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; }
+  function moveInd(animate) {
+    var b = cur && btns[cur]; if (!b) return;
+    if (!animate) ind.style.transition = 'none';
+    ind.style.width = b.offsetWidth + 'px'; ind.style.transform = 'translate(' + b.offsetLeft + 'px,' + b.offsetTop + 'px)';
+    if (!animate) { void ind.offsetWidth; ind.style.transition = ''; }
   }
-  function select(name, hash) {
+  function updateFade() {
+    var s = scroller; rail.classList.toggle('at-start', s.scrollLeft < 4); rail.classList.toggle('at-end', s.scrollLeft + s.clientWidth >= s.scrollWidth - 4);
+  }
+  function select(name, hash, first) {
     if (!btns[name]) return;
-    cur = name;
-    Object.keys(btns).forEach(function (k) { var on = k === name; btns[k].classList.toggle('on', on); if (on) btns[k].setAttribute('aria-current', 'true'); else btns[k].removeAttribute('aria-current'); });
+    var changed = cur !== name; cur = name;
+    order.forEach(function (k) { var on = k === name; btns[k].classList.toggle('on', on); btns[k].tabIndex = on ? 0 : -1; if (on) btns[k].setAttribute('aria-current', 'true'); else btns[k].removeAttribute('aria-current'); });
+    moveInd(!first);
+    var b = btns[name]; scroller.scrollTo ? scroller.scrollTo({ left: b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2, behavior: first ? 'auto' : 'smooth' }) : (scroller.scrollLeft = b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2);
+    setTimeout(updateFade, 250);
+    if (changed) { nameEl.classList.add('swap'); setTimeout(function () { nameEl.textContent = name; nameEl.classList.remove('swap'); }, 160); }
     var u = viewerUrl(name) + (hash || '');
-    setLoading(true, '지도를 불러오는 중입니다');
-    frame.src = u; fs.href = u; fs.style.display = 'grid';
-    var b = btns[name], p = nav;
-    if (p.scrollWidth > p.clientWidth) p.scrollLeft = b.offsetLeft - (p.clientWidth - b.offsetWidth) / 2;
+    stages(true, first);
+    frame.src = u; fs.href = u; badge.style.display = 'flex';
+    try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
   }
-  nav.addEventListener('click', function (e) {
-    var b = e.target.closest ? e.target.closest('.bg-chip') : null; if (!b) return;
-    moved = true; select(b.getAttribute('data-n'));
+  nav.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('.bg-chip') : null; if (!b) return; moved = true; select(b.getAttribute('data-n')); });
+  nav.addEventListener('keydown', function (e) {
+    var k = e.key, i = order.indexOf(document.activeElement && document.activeElement.getAttribute('data-n'));
+    if (i < 0) return;
+    var n = k === 'ArrowRight' ? Math.min(order.length - 1, i + 1) : k === 'ArrowLeft' ? Math.max(0, i - 1) : k === 'Home' ? 0 : k === 'End' ? order.length - 1 : -1;
+    if (n < 0) return; e.preventDefault(); btns[order[n]].focus();
   });
+  scroller.addEventListener('scroll', updateFade, { passive: true });
+  window.addEventListener('resize', function () { moveInd(false); updateFade(); });
 
   /* ---------- 위치 → 동 ---------- */
   function inP(x, y, q) { var c = false; for (var i = 0, j = q.length - 2; i < q.length; j = i, i += 2) { var xi = q[i], yi = q[i + 1], xj = q[j], yj = q[j + 1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
@@ -100,14 +123,16 @@
     }
     return null;
   }
-  function start(r) { if (started) return; started = true; select(r.n, r.h); }
+  function start(r) { if (started) return; started = true; select(r.n, r.h, true); }
   function late(lat, lon) {
     if (!started || moved) return;
     if (lastLL && Math.abs(lat - lastLL[0]) < 0.0003 && Math.abs(lon - lastLL[1]) < 0.0003) return;
     var r = pick(lat, lon); if (!r) return; lastLL = [lat, lon];
-    if (r.n === cur) { var u = viewerUrl(r.n) + r.h; frame.src = u; fs.href = u; } else select(r.n, r.h);
+    if (r.n === cur) { var u = viewerUrl(r.n) + r.h; frame.src = u; fs.href = u; } else select(r.n, r.h, false);
   }
   function boot() {
+    var hn = ''; try { hn = decodeURIComponent((location.hash || '').slice(1)); } catch (x) { hn = ''; }
+    if (hn && btns[hn]) { moved = true; start({ n: hn }); return; }
     var sv = null; try { sv = JSON.parse(localStorage.getItem('hmLast') || 'null'); } catch (x) { sv = null; }
     if (sv && sv.n && sv.h && btns[sv.n] && Date.now() - sv.t < 2592000000) { moved = true; start({ n: sv.n, h: sv.h }); toast('마지막으로 보던 위치로 열었어요 · ' + sv.n); return; }
     if (!navigator.geolocation) { start(FALLBACK); return; }
@@ -133,18 +158,47 @@
   window.addEventListener('message', function (e) {
     if (e.origin !== ORIGIN || !e.data) return;
     var t = e.data.type;
-    if (t === 'vw-ready') setLoading(false);
+    if (t === 'vw-ready') stages(false);
     else if (t === 'vw-moved') moved = true;
     else if (t === 'vw-view' && cur) { try { localStorage.setItem('hmLast', JSON.stringify({ n: cur, h: e.data.h, t: Date.now() })); } catch (x) { /* 저장 불가 */ } }
   });
 
+  /* ---------- 세종의 지금 해(헤더의 볕·그림자) ---------- */
+  var LAT = 36.5, LON = 127.28, RAD = Math.PI / 180;
+  function sunPos(d) {
+    var t = d.getTime() / 86400000 + 2440587.5 - 2451545.0, M = (357.5291 + 0.98560028 * t) * RAD,
+      C = 1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M), L = (280.4665 + 0.98564736 * t + C) * RAD,
+      eps = 23.4393 * RAD, dec = Math.asin(Math.sin(eps) * Math.sin(L)), ra = Math.atan2(Math.cos(eps) * Math.sin(L), Math.cos(L)),
+      gst = (280.16 + 360.9856235 * t) * RAD, H = gst + LON * RAD - ra, phi = LAT * RAD;
+    var alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H));
+    var az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi)) + Math.PI;
+    return { alt: alt / RAD, az: az / RAD };
+  }
+  function fmt(m) { var h = Math.floor(m / 60) % 24, mm = m % 60; return (h < 12 ? '오전 ' : '오후 ') + (h % 12 || 12) + ':' + (mm < 10 ? '0' : '') + mm; }
+  function sunTick() {
+    var now = new Date(), s = sunPos(now), midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()), rise = -1, set = -1;
+    for (var m = 0; m < 1440; m += 2) { var a = sunPos(new Date(midnight.getTime() + m * 60000)).alt; if (rise < 0 && a > 0) rise = m; if (rise >= 0 && a <= 0 && set < 0) { set = m; break; } }
+    var cm = now.getHours() * 60 + now.getMinutes(), day = s.alt > 0, f = rise >= 0 && set > rise ? Math.max(0, Math.min(1, (cm - rise) / (set - rise))) : .5;
+    root.classList.toggle('night', !day);
+    var dot = head.querySelector('.dot'), x = 3 + 50 * f, y = 27 - 4 * 27 * f * (1 - f) * 1.0;
+    dot.setAttribute('cx', x.toFixed(1)); dot.setAttribute('cy', (27 - 38 * f * (1 - f)).toFixed(1));
+    head.querySelector('.bg-sun-t').textContent = fmt(cm) + (day ? ' · 고도 ' + Math.round(s.alt) + '°' : ' · 밤');
+    head.querySelector('.bg-sun-s').textContent = day ? '일출 ' + fmt(rise) + ' · 일몰 ' + fmt(set) : (rise >= 0 ? '내일 일출 ' + fmt(rise) : '');
+    /* 해가 낮을수록 그림자는 길고, 방위 반대쪽으로 뻗는다 */
+    var len = day ? Math.min(14, 4 + 10 / Math.max(.25, Math.tan(Math.max(6, s.alt) * RAD) * 2.2)) : 4, azr = s.az * RAD;
+    root.style.setProperty('--sx', (-Math.sin(azr) * len).toFixed(1) + 'px'); root.style.setProperty('--sy', (Math.max(1.5, Math.cos(azr) * len * .5 + len * .35)).toFixed(1) + 'px'); root.style.setProperty('--sb', (len * .35).toFixed(1) + 'px');
+    root.style.setProperty('--glow', day ? String(Math.max(.35, Math.min(1, s.alt / 40))) : '.25');
+  }
+  sunTick(); setInterval(sunTick, 60000);
+
   /* ---------- 폭 맞춤(테마 칸을 벗어나 화면 가운데로) ---------- */
   function fit() {
     var vw = document.documentElement.clientWidth;
-    if (vw <= 760) { root.style.width = ''; root.style.marginLeft = ''; return; }
+    if (vw <= 760) { root.style.width = ''; root.style.marginLeft = ''; root.style.maxWidth = ''; return; }
     root.style.marginLeft = '0px'; root.style.width = '';
     var l = root.getBoundingClientRect().left, W = Math.min(1800, vw - 48);
-    root.style.width = W + 'px'; root.style.marginLeft = ((vw - W) / 2 - l) + 'px';
+    root.style.maxWidth = 'none'; root.style.width = W + 'px'; root.style.marginLeft = ((vw - W) / 2 - l) + 'px';
+    moveInd(false);
   }
   fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit); setTimeout(fit, 600); setTimeout(fit, 2000);
 })();
