@@ -84,7 +84,8 @@
     stT.push(setTimeout(function () { note.textContent = '조금 오래 걸리네요. 처음 한 번만 그래요.'; }, 14000));
     stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); }, 28000));
   }
-  function viewerUrl(name, hash) { var b = name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; return b + (hash || '#') + (hash ? '&' : '') + 'ext=1'; }
+  var VIEWER_V = '20261023b';
+  function viewerUrl(name, hash) { var b = name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; return b + '?v=' + VIEWER_V + (hash || '#') + (hash ? '&' : '') + 'ext=1'; }
   function setSeg(state) {
     var on = state === 'on' || state === 'loading', auto = state === 'auto';
     segBtn.sat.setAttribute('aria-pressed', on ? 'true' : 'false'); segBtn.map.setAttribute('aria-pressed', on ? 'false' : 'true');
