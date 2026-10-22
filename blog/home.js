@@ -54,24 +54,40 @@
   var badge = el('div', 'bg-chrome',
     '<span class="bg-name">—</span><span class="bg-sep" aria-hidden="true"></span>' +
     '<div class="bg-seg loading" role="group" aria-label="지도 종류"><button type="button" data-v="map" aria-pressed="false">지도</button><button type="button" data-v="sat" aria-pressed="true"><i class="sp" aria-hidden="true"></i>위성</button></div><span class="bg-sep" aria-hidden="true"></span>' +
+    '<button type="button" class="bg-fs bg-share" aria-label="링크 공유" title="링크 공유"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg></button>' +
     '<a class="bg-fs" target="_blank" rel="noopener" aria-label="전체 화면으로 열기" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></a>');
   badge.style.display = 'none';
-  var fs = badge.querySelector('.bg-fs'), nameEl = badge.querySelector('.bg-name'), seg = badge.querySelector('.bg-seg'), segBtn = { map: seg.querySelector('[data-v=map]'), sat: seg.querySelector('[data-v=sat]') };
+  var fs = badge.querySelector('a.bg-fs'), shareBtn = badge.querySelector('.bg-share'), nameEl = badge.querySelector('.bg-name'), seg = badge.querySelector('.bg-seg'), segBtn = { map: seg.querySelector('[data-v=map]'), sat: seg.querySelector('[data-v=sat]') };
   var say = el('div', 'bg-say'); say.setAttribute('role', 'status');
   stage.appendChild(frame); stage.appendChild(loader); stage.appendChild(badge); stage.appendChild(say);
-  var foot = el('footer', 'bg-foot', '<span>참고용(실측·법적 판정 아님) · 위성영상: 브이월드(국토교통부) · 경계: © OpenStreetMap contributors</span><span class="bg-brand"><i></i>볕결 세종</span>');
+  var foot = el('footer', 'bg-foot', '<span class="bg-fl">참고용(실측·법적 판정 아님) · 위성영상: 브이월드(국토교통부) · 경계: © OpenStreetMap contributors</span><span class="bg-fr"><button type="button" class="bg-link" data-act="credits">사진 출처</button><span class="bg-brand"><i></i>볕결 세종</span></span>');
+  var dlg = el('dialog', 'bg-dlg', '<form method="dialog"><h2>사진 출처</h2><p>지도 옆 사진은 위키미디어 커먼즈의 자유 이용 사진입니다.</p><ul>' + PHOTOS.map(function (p) { return '<li><b>' + esc(p.t) + '</b> · ' + esc(p.a) + ' · <a href="' + p.u + '" target="_blank" rel="noopener">' + p.l + '</a></li>'; }).join('') + '</ul><button class="bg-dlg-x">닫기</button></form>');
+  foot.querySelector('[data-act=credits]').addEventListener('click', function () { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); });
   var strip = el('div', 'bg-strip', PHOTOS.slice(0, 4).map(card).join(''));
   main.appendChild(stage); main.appendChild(strip); main.appendChild(foot);
   grid.appendChild(top); grid.appendChild(adL); grid.appendChild(main); grid.appendChild(adR);
   var skip = el('a', 'bg-skip', '지도 건너뛰기'); skip.href = '#bg-after'; var live = el('div', 'bg-vh'); live.setAttribute('aria-live', 'polite'); var after = el('span'); after.id = 'bg-after'; after.tabIndex = -1;
-  root.appendChild(skip); root.appendChild(live); root.appendChild(grid); root.appendChild(after);
+  root.appendChild(skip); root.appendChild(live); root.appendChild(grid); root.appendChild(dlg); root.appendChild(after);
+  try { if (!document.querySelector('link[rel=icon][data-bg]')) { var fv = document.createElement('link'); fv.rel = 'icon'; fv.type = 'image/svg+xml'; fv.setAttribute('data-bg', '1'); fv.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#2f3819"/><circle cx="13" cy="13" r="5.5" fill="#e8a33d"/><path d="M17 29 L29 17" stroke="#f6d9a0" stroke-width="2" stroke-linecap="round"/><path d="M21 31 L31 21" stroke="#f6d9a0" stroke-width="2" stroke-linecap="round" opacity=".55"/></svg>'); document.head.appendChild(fv); } } catch (x) { /* 파비콘 추가 불가 */ }
   try { if (!document.querySelector('meta[name=theme-color]')) { var mt = document.createElement('meta'); mt.name = 'theme-color'; mt.content = '#f5eddc'; document.head.appendChild(mt); } } catch (x) { /* 메타 추가 불가 */ }
 
   /* ---------- 상태 ---------- */
   var cur = null, moved = false, started = false, lastLL = null, sayT = 0, stT = [], polys = null;
   if (!window.ResizeObserver && !('transition' in document.documentElement.style)) root.classList.add('no-ind');
 
-  function toast(m) { say.textContent = m; say.classList.add('on'); clearTimeout(sayT); sayT = setTimeout(function () { say.classList.remove('on'); }, 9000); }
+  function toast(m, act, ms) {
+    say.innerHTML = ''; say.appendChild(document.createTextNode(m));
+    if (act) { var b = el('button', 'bg-say-b', act.label); b.type = 'button'; b.addEventListener('click', function () { say.classList.remove('on'); act.fn(); }); say.appendChild(b); }
+    say.classList.toggle('act', !!act); say.classList.add('on'); clearTimeout(sayT); sayT = setTimeout(function () { say.classList.remove('on'); }, ms || (act ? 12000 : 7000));
+  }
+  var satT = 0, satT2 = 0;
+  function watchSat(state) {
+    clearTimeout(satT);
+    if (state === 'loading') {
+      satT = setTimeout(function () { toast('위성 사진이 아직 오는 중이에요. 기다리거나 "지도"로 먼저 볼 수 있어요.', { label: '지도로 보기', fn: function () { segBtn.map.click(); } }); }, 45000);
+      clearTimeout(satT2); satT2 = setTimeout(function () { seg.classList.remove('loading'); seg.setAttribute('aria-busy', 'false'); }, 150000);
+    } else clearTimeout(satT2);
+  }
   function stages(on, first) {
     stT.forEach(clearTimeout); stT = [];
     var t = loader.querySelector('.bg-load-t'), dots = loader.querySelectorAll('.bg-dots i'), note = loader.querySelector('.bg-load-n');
@@ -82,13 +98,13 @@
     stT.push(setTimeout(function () { set(1, (cur === '행복도시 전체' ? '행복도시' : cur) + ' 3D 건물을 세우는 중입니다'); }, 3500));
     stT.push(setTimeout(function () { set(2, '위성 사진을 입히는 중입니다'); }, 9000));
     stT.push(setTimeout(function () { note.textContent = '조금 오래 걸리네요. 처음 한 번만 그래요.'; }, 14000));
-    stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); }, 28000));
+    stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); toast('지도가 늦어지고 있어요. 인터넷 연결을 확인하거나 다시 시도해 주세요.', { label: '다시 시도', fn: function () { if (cur) select(cur); } }); }, 30000));
   }
   var VIEWER_V = '20261023b';
   function viewerUrl(name, hash) { var b = name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; return b + '?v=' + VIEWER_V + (hash || '#') + (hash ? '&' : '') + 'ext=1'; }
   function setSeg(state) {
     var on = state === 'on' || state === 'loading', auto = state === 'auto';
-    segBtn.sat.setAttribute('aria-pressed', on ? 'true' : 'false'); segBtn.map.setAttribute('aria-pressed', on ? 'false' : 'true');
+    watchSat(state); segBtn.sat.setAttribute('aria-pressed', on ? 'true' : 'false'); segBtn.map.setAttribute('aria-pressed', on ? 'false' : 'true');
     seg.classList.toggle('loading', state === 'loading'); seg.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false'); segBtn.sat.disabled = auto; segBtn.sat.title = auto ? '일조 보기 중에는 지도만 보여요' : '';
     root.classList.toggle('is-loading', state === 'loading');
   }
@@ -109,7 +125,7 @@
     var changed = cur !== name; cur = name;
     order.forEach(function (k) { var on = k === name; btns[k].classList.toggle('on', on); btns[k].tabIndex = on ? 0 : -1; if (on) btns[k].setAttribute('aria-current', 'true'); else btns[k].removeAttribute('aria-current'); });
     moveInd(!first);
-    var b = btns[name]; scroller.scrollTo ? scroller.scrollTo({ left: b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2, behavior: first ? 'auto' : 'smooth' }) : (scroller.scrollLeft = b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2);
+    var b = btns[name]; if (first) { var need = b.offsetLeft + b.offsetWidth + 12 - scroller.clientWidth; scroller.scrollLeft = need > 0 ? need : 0; } else if (scroller.scrollTo) scroller.scrollTo({ left: b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' }); else scroller.scrollLeft = b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2;
     setTimeout(updateFade, 250);
     if (changed) { nameEl.classList.add('swap'); setTimeout(function () { nameEl.textContent = name; nameEl.classList.remove('swap'); }, 160); }
     var u = viewerUrl(name, hash);
@@ -117,6 +133,12 @@
     frame.title = name + ' 3D 일조 지도'; live.textContent = name + ' 지도를 불러옵니다'; frame.src = u; fs.href = u; badge.style.display = 'flex';
     try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
   }
+  shareBtn.addEventListener('click', function () {
+    var url = location.href.split('#')[0] + '#' + encodeURIComponent(cur || ''), t = (cur || '세종') + ' 3D 지도 · 볕결 세종';
+    if (navigator.share) { navigator.share({ title: t, url: url }).catch(function () { /* 취소 */ }); return; }
+    var done = function () { toast('링크를 복사했어요 · ' + (cur || '')); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { toast(url); }); else toast(url);
+  });
   nav.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('.bg-chip') : null; if (!b) return; moved = true; select(b.getAttribute('data-n')); });
   nav.addEventListener('keydown', function (e) {
     var k = e.key, i = order.indexOf(document.activeElement && document.activeElement.getAttribute('data-n'));
@@ -157,7 +179,7 @@
       var la = p.coords.latitude, lo = p.coords.longitude, r = pick(la, lo);
       if (!started) {
         clearTimeout(tm); lastLL = [la, lo];
-        if (r) { toast('내 위치로 열었어요 · ' + r.n); if (btns[r.n]) btns[r.n].classList.add('here'); start(r); } else { toast('내 위치(' + la.toFixed(3) + ', ' + lo.toFixed(3) + ')가 행복도시 밖이라 새뜸마을 1단지로 열었어요'); start(FALLBACK); }
+        if (r) { toast('내 위치는 ' + r.n + '이에요 · 다른 동도 볼 수 있어요'); if (btns[r.n]) btns[r.n].classList.add('here'); start(r); } else { toast('내 위치(' + la.toFixed(3) + ', ' + lo.toFixed(3) + ')가 행복도시 밖이라 새뜸마을 1단지로 열었어요'); start(FALLBACK); }
       } else late(la, lo);
     };
     navigator.geolocation.getCurrentPosition(go, function (er) {
