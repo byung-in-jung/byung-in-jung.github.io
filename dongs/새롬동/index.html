@@ -5276,9 +5276,9 @@ const VWO = (() => {
     if (!window.__fmWinClick || !SUN || !SUN.windowViewAtWall) return;
     const bad = () => fmToast('건물 벽을 눌러 주세요. (창문이 있는 건물 옆면을 눌러요)');
     if (!p || p.lon == null || !p.d) return bad();
-    const w = rayWall(p, p.d); if (!w) return bad();
+    const w = rayWall(p, p.d); window.__wpDbg={step:'ray',ok:!!w,w:w}; if (!w) return bad();
     const gr = hAt(w.x, w.y), z = clamp(w.z, gr + 1.6, Math.max(gr + 2, w.top - 0.6));
-    if (!SUN.windowViewAtWall(w.id, w.x, w.y, z, w.nx, w.ny)) return bad();
+    {const okv=SUN.windowViewAtWall(w.id, w.x, w.y, z, w.nx, w.ny); window.__wpDbg={step:'wv',ok:okv,w:w,z:z,qmsg:(document.getElementById('sun-qmsg')||{}).textContent}; if (!okv) return bad();}
     try { SUN.showBuilding(w.id); } catch (e) { /* 카드 없이 진행 */ }
   }
   function resync() { const go = () => { if (st.on && st.fr) send({ t: 'cam', cam: ourCam() }); }; requestAnimationFrame(() => requestAnimationFrame(go)); setTimeout(go, 1500); }      // 우리 카메라가 새 프레임에 반영된 뒤에 보낸다(+ 한 번 더)
