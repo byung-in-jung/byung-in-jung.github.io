@@ -4019,6 +4019,7 @@ function updateLabels() {
 
 // ------------------------------------------------------------------ camera / controls
 const V = { tx: 0, ty: 0, tz: 0, yaw: 0.55, pitch: 0.66, dist: 2300 };
+window.__V = V;
 // ---- 첫 화면 구도(공통 조각: 새롬동·모든 동 뷰어가 같은 코드를 쓴다; flowmap/first_view.js). 동 경계 안 건물 분포 기준 중앙화(한솔식을 일반화).
 {
   const d = f10(D.dong); let sx = 0, sy = 0; for (let i = 0; i < d.length; i += 2) { sx += d[i]; sy += d[i + 1]; }
