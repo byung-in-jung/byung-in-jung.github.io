@@ -39,7 +39,7 @@
   });
   scroller.appendChild(nav); rail.appendChild(scroller);
 
-  var grid = el('div', 'bg-grid');
+  var grid = el('div', 'bg-grid'), top = el('div', 'bg-top'); top.appendChild(head); top.appendChild(rail);
   var adL = el('aside', 'bg-ad bg-ad-l', card(PHOTOS[0]) + card(PHOTOS[1])); adL.id = 'bg-ad-l'; adL.setAttribute('aria-label', '세종 명소 · 광고 자리(왼쪽)');
   var adR = el('aside', 'bg-ad bg-ad-r', card(PHOTOS[2]) + card(PHOTOS[3])); adR.id = 'bg-ad-r'; adR.setAttribute('aria-label', '세종 명소 · 광고 자리(오른쪽)');
   var main = el('main', 'bg-main');
@@ -49,17 +49,19 @@
     '<svg class="bg-sil" viewBox="0 0 600 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="#56632d" opacity=".35"><rect x="24" y="52" width="34" height="68"/><rect x="64" y="22" width="30" height="98"/><rect x="100" y="60" width="42" height="60"/><rect x="170" y="36" width="32" height="84"/><rect x="208" y="72" width="46" height="48"/><rect x="300" y="14" width="36" height="106"/><rect x="342" y="54" width="30" height="66"/><rect x="378" y="34" width="40" height="86"/><rect x="440" y="64" width="44" height="56"/><rect x="490" y="42" width="30" height="78"/><rect x="526" y="70" width="46" height="50"/></g></svg>' +
     '<div class="bg-load-t">내 위치를 확인하는 중입니다</div><div class="bg-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div><div class="bg-load-n"></div>');
   loader.setAttribute('role', 'status');
-  var badge = el('div', 'bg-badge',
-    '<a class="bg-fs" target="_blank" rel="noopener" aria-label="전체 화면으로 열기" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></a><span class="bg-name">—</span>');
+  var badge = el('div', 'bg-chrome',
+    '<span class="bg-name">—</span><span class="bg-sep" aria-hidden="true"></span>' +
+    '<div class="bg-seg loading" role="group" aria-label="지도 종류"><button type="button" data-v="map" aria-pressed="false">지도</button><button type="button" data-v="sat" aria-pressed="true"><i class="sp" aria-hidden="true"></i>위성</button></div><span class="bg-sep" aria-hidden="true"></span>' +
+    '<a class="bg-fs" target="_blank" rel="noopener" aria-label="전체 화면으로 열기" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></a>');
   badge.style.display = 'none';
-  var fs = badge.querySelector('.bg-fs'), nameEl = badge.querySelector('.bg-name');
+  var fs = badge.querySelector('.bg-fs'), nameEl = badge.querySelector('.bg-name'), seg = badge.querySelector('.bg-seg'), segBtn = { map: seg.querySelector('[data-v=map]'), sat: seg.querySelector('[data-v=sat]') };
   var say = el('div', 'bg-say'); say.setAttribute('role', 'status');
   stage.appendChild(frame); stage.appendChild(loader); stage.appendChild(badge); stage.appendChild(say);
   var foot = el('footer', 'bg-foot', '<span>참고용(실측·법적 판정 아님) · 위성영상: 브이월드(국토교통부) · 경계: © OpenStreetMap contributors</span><span class="bg-brand"><i></i>볕결 세종</span>');
   var strip = el('div', 'bg-strip', PHOTOS.map(card).join(''));
   main.appendChild(stage); main.appendChild(strip); main.appendChild(foot);
-  grid.appendChild(adL); grid.appendChild(main); grid.appendChild(adR);
-  root.appendChild(head); root.appendChild(rail); root.appendChild(grid);
+  grid.appendChild(top); grid.appendChild(adL); grid.appendChild(main); grid.appendChild(adR);
+  root.appendChild(grid);
 
   /* ---------- 상태 ---------- */
   var cur = null, moved = false, started = false, lastLL = null, sayT = 0, stT = [], polys = null;
@@ -78,7 +80,16 @@
     stT.push(setTimeout(function () { note.textContent = '조금 오래 걸리네요. 처음 한 번만 그래요.'; }, 14000));
     stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); }, 28000));
   }
-  function viewerUrl(name) { return name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; }
+  function viewerUrl(name, hash) { var b = name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; return b + (hash || '#') + (hash ? '&' : '') + 'ext=1'; }
+  function setSeg(state) {
+    var on = state === 'on' || state === 'loading', auto = state === 'auto';
+    segBtn.sat.setAttribute('aria-pressed', on ? 'true' : 'false'); segBtn.map.setAttribute('aria-pressed', on ? 'false' : 'true');
+    seg.classList.toggle('loading', state === 'loading'); segBtn.sat.disabled = auto; segBtn.sat.title = auto ? '일조 보기 중에는 지도만 보여요' : '';
+    root.classList.toggle('is-loading', state === 'loading');
+  }
+  function setVw(on) { try { frame.contentWindow.postMessage({ type: 'vw-set', on: on }, ORIGIN); } catch (x) { /* 아직 로딩 전 */ } }
+  segBtn.map.addEventListener('click', function () { setSeg('off'); setVw(false); });
+  segBtn.sat.addEventListener('click', function () { setSeg('loading'); setVw(true); });
   function moveInd(animate) {
     var b = cur && btns[cur]; if (!b) return;
     if (!animate) ind.style.transition = 'none';
@@ -96,8 +107,8 @@
     var b = btns[name]; scroller.scrollTo ? scroller.scrollTo({ left: b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2, behavior: first ? 'auto' : 'smooth' }) : (scroller.scrollLeft = b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2);
     setTimeout(updateFade, 250);
     if (changed) { nameEl.classList.add('swap'); setTimeout(function () { nameEl.textContent = name; nameEl.classList.remove('swap'); }, 160); }
-    var u = viewerUrl(name) + (hash || '');
-    stages(true, first);
+    var u = viewerUrl(name, hash);
+    stages(true, first); setSeg('loading');
     frame.src = u; fs.href = u; badge.style.display = 'flex';
     try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
   }
@@ -128,7 +139,7 @@
     if (!started || moved) return;
     if (lastLL && Math.abs(lat - lastLL[0]) < 0.0003 && Math.abs(lon - lastLL[1]) < 0.0003) return;
     var r = pick(lat, lon); if (!r) return; lastLL = [lat, lon];
-    if (r.n === cur) { var u = viewerUrl(r.n) + r.h; frame.src = u; fs.href = u; } else select(r.n, r.h, false);
+    if (r.n === cur) { var u = viewerUrl(r.n, r.h); frame.src = u; fs.href = u; } else select(r.n, r.h, false);
   }
   function boot() {
     var hn = ''; try { hn = decodeURIComponent((location.hash || '').slice(1)); } catch (x) { hn = ''; }
@@ -141,7 +152,7 @@
       var la = p.coords.latitude, lo = p.coords.longitude, r = pick(la, lo);
       if (!started) {
         clearTimeout(tm); lastLL = [la, lo];
-        if (r) { toast('내 위치로 열었어요 · ' + r.n); start(r); } else { toast('내 위치(' + la.toFixed(3) + ', ' + lo.toFixed(3) + ')가 행복도시 밖이라 새뜸마을 1단지로 열었어요'); start(FALLBACK); }
+        if (r) { toast('내 위치로 열었어요 · ' + r.n); if (btns[r.n]) btns[r.n].classList.add('here'); start(r); } else { toast('내 위치(' + la.toFixed(3) + ', ' + lo.toFixed(3) + ')가 행복도시 밖이라 새뜸마을 1단지로 열었어요'); start(FALLBACK); }
       } else late(la, lo);
     };
     navigator.geolocation.getCurrentPosition(go, function (er) {
@@ -160,6 +171,7 @@
     var t = e.data.type;
     if (t === 'vw-ready') stages(false);
     else if (t === 'vw-moved') moved = true;
+    else if (t === 'vw-state') setSeg(e.data.state);
     else if (t === 'vw-view' && cur) { try { localStorage.setItem('hmLast', JSON.stringify({ n: cur, h: e.data.h, t: Date.now() })); } catch (x) { /* 저장 불가 */ } }
   });
 
@@ -185,8 +197,8 @@
     head.querySelector('.bg-sun-t').textContent = fmt(cm) + (day ? ' · 고도 ' + Math.round(s.alt) + '°' : ' · 밤');
     head.querySelector('.bg-sun-s').textContent = day ? '일출 ' + fmt(rise) + ' · 일몰 ' + fmt(set) : (rise >= 0 ? '내일 일출 ' + fmt(rise) : '');
     /* 해가 낮을수록 그림자는 길고, 방위 반대쪽으로 뻗는다 */
-    var len = day ? Math.min(14, 4 + 10 / Math.max(.25, Math.tan(Math.max(6, s.alt) * RAD) * 2.2)) : 4, azr = s.az * RAD;
-    root.style.setProperty('--sx', (-Math.sin(azr) * len).toFixed(1) + 'px'); root.style.setProperty('--sy', (Math.max(1.5, Math.cos(azr) * len * .5 + len * .35)).toFixed(1) + 'px'); root.style.setProperty('--sb', (len * .35).toFixed(1) + 'px');
+    var len = day ? Math.min(6, 2 + 4 / Math.max(.4, Math.tan(Math.max(6, s.alt) * RAD) * 2)) : 3, azr = s.az * RAD;
+    root.style.setProperty('--sx', (-Math.sin(azr) * len).toFixed(1) + 'px'); root.style.setProperty('--sy', (Math.max(1.5, Math.cos(azr) * len * .5 + len * .35)).toFixed(1) + 'px'); root.style.setProperty('--sb', '0px');
     root.style.setProperty('--glow', day ? String(Math.max(.35, Math.min(1, s.alt / 40))) : '.25');
   }
   sunTick(); setInterval(sunTick, 60000);
