@@ -205,3 +205,30 @@ body.feed-view .centered-top{padding-top:0!important}
   #bg-home .bg-say.on{transform:none}
 }
 #bg-home .bg-chrome.no-sat .bg-seg,#bg-home .bg-chrome.no-sat .bg-seg+.bg-sep{display:none}
+
+/* ---- 폰 지도 가림 해소 (2026-10-24, design-review-phone) : 데스크톱은 display:contents 로 기존 모습 유지 ---- */
+#bg-home .bg-id,#bg-home .bg-tl{display:contents}
+@media (max-width:760px){
+  #bg-home .bg-sub{display:none}
+  #bg-home .bg-head{padding:10px 2px 6px}
+  #bg-home{--stage-h:clamp(440px,calc(100svh - 168px),760px)}
+  #bg-home .bg-chrome{left:8px;right:8px;top:8px;height:auto;padding:0;gap:8px;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none;justify-content:space-between}
+  #bg-home .bg-chrome > *{pointer-events:auto}
+  #bg-home .bg-id{display:flex;align-items:center;gap:6px;height:34px;padding:0 4px 0 10px;border-radius:12px;background:rgba(255,250,240,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(60,50,20,.12);box-shadow:0 2px 8px rgba(20,25,10,.18)}
+  #bg-home .bg-tl{display:flex;gap:8px;margin-left:auto}
+  #bg-home .bg-sep{display:none}
+  #bg-home .bg-name{font-size:14px}
+  #bg-home .bg-seg{padding:2px;border-radius:9px}
+  #bg-home .bg-seg button{position:relative;height:24px;padding:0 9px;font-size:12px;border-radius:7px}
+  #bg-home .bg-seg button::after{content:"";position:absolute;inset:-8px 0}
+  #bg-home .bg-fs{position:relative;width:34px;height:34px;border-radius:50%;background:rgba(255,250,240,.88);border:1px solid rgba(60,50,20,.12);box-shadow:0 2px 8px rgba(20,25,10,.18)}
+  #bg-home .bg-fs.bg-share{border:1px solid rgba(60,50,20,.12);background:rgba(255,250,240,.88)}
+  #bg-home .bg-fs::after{content:"";position:absolute;inset:-5px}
+  #bg-home .bg-fs svg{width:16px;height:16px}
+  #bg-home .bg-say{bottom:calc(8px + 26px + 10px + 36px + 10px)}
+}
+@media (max-width:900px) and (max-height:520px) and (orientation:landscape){
+  #bg-home{--stage-h:calc(100svh - 16px)}
+  #bg-home .bg-head{display:none}
+  #bg-home .bg-rail{margin-bottom:6px}
+}

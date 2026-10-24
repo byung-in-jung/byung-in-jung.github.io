@@ -52,10 +52,10 @@
     '<div class="bg-load-t">내 위치를 확인하는 중입니다</div><div class="bg-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div><div class="bg-load-n"></div>');
   loader.setAttribute('role', 'status');
   var badge = el('div', 'bg-chrome',
-    '<span class="bg-name">—</span><span class="bg-sep" aria-hidden="true"></span>' +
-    '<div class="bg-seg loading" role="group" aria-label="지도 종류"><button type="button" data-v="map" aria-pressed="false">지도</button><button type="button" data-v="sat" aria-pressed="true"><i class="sp" aria-hidden="true"></i>위성</button></div><span class="bg-sep" aria-hidden="true"></span>' +
-    '<button type="button" class="bg-fs bg-share" aria-label="링크 공유" title="링크 공유"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg></button>' +
-    '<a class="bg-fs" target="_blank" rel="noopener" aria-label="전체 화면으로 열기" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></a>');
+    '<div class="bg-id"><span class="bg-name">—</span><span class="bg-sep" aria-hidden="true"></span>' +
+    '<div class="bg-seg loading" role="group" aria-label="지도 종류"><button type="button" data-v="map" aria-pressed="false">지도</button><button type="button" data-v="sat" aria-pressed="true"><i class="sp" aria-hidden="true"></i>위성</button></div><span class="bg-sep" aria-hidden="true"></span></div>' +
+    '<div class="bg-tl"><button type="button" class="bg-fs bg-share" aria-label="링크 공유" title="링크 공유"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg></button>' +
+    '<a class="bg-fs" target="_blank" rel="noopener" aria-label="전체 화면으로 열기" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></a></div>');
   badge.style.display = 'none';
   var fs = badge.querySelector('a.bg-fs'), shareBtn = badge.querySelector('.bg-share'), nameEl = badge.querySelector('.bg-name'), seg = badge.querySelector('.bg-seg'), segBtn = { map: seg.querySelector('[data-v=map]'), sat: seg.querySelector('[data-v=sat]') };
   var say = el('div', 'bg-say'); say.setAttribute('role', 'status');
@@ -100,7 +100,7 @@
     stT.push(setTimeout(function () { note.textContent = '조금 오래 걸리네요. 처음 한 번만 그래요.'; }, 14000));
     stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); toast('지도가 늦어지고 있어요. 인터넷 연결을 확인하거나 다시 시도해 주세요.', { label: '다시 시도', fn: function () { if (cur) select(cur); } }); }, 30000));
   }
-  var VIEWER_V = '20261023d';
+  var VIEWER_V = '20261024a';
   function viewerUrl(name, hash) { var b = name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; return b + '?v=' + VIEWER_V + (hash || '#') + (hash ? '&' : '') + 'ext=1'; }
   function setSeg(state) {
     var on = state === 'on' || state === 'loading', auto = state === 'auto';
