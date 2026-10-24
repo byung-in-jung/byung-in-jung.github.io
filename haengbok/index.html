@@ -2140,5 +2140,15 @@ html.fm-ext #footer .fsat{display:none!important}
 html.fm-ext body.fm-sat #footer:not(.fm-open) .fsat{display:block!important;flex:1 1 0;min-width:30%;margin:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.fm-ext body.fm-sat #footer:not(.fm-open) .fshort{flex:0 1 auto;max-width:46%}
 html.fm-ext body.fm-sat #footer.fm-open .fsat{display:block!important;flex:1 0 100%}
-}</style><script>if(/[#&]ext=1/.test(location.hash))document.documentElement.classList.add("fm-ext")</script><!--/phonefix1--></body>
+}</style><style id="phonefix2">@media (max-width:720px),(max-height:620px){
+html.fm-ext body.fm-sat #footer:not(.fm-open){flex-wrap:wrap}
+html.fm-ext body.fm-sat #footer:not(.fm-open) .fshort{display:none}
+html.fm-ext body.fm-sat #footer:not(.fm-open) .fsat{flex:0 0 auto;max-width:none;min-width:0;overflow:visible;text-overflow:clip;font-size:10.5px}
+html.fm-ext #footer:not(.fm-open){padding-top:3px;padding-bottom:calc(4px + env(safe-area-inset-bottom))}
+html.fm-ext #footer #fMore{min-height:0;height:18px;padding:0 4px;line-height:18px}
+html.fm-ext #bVw,html.fm-ext #bVwChip{display:none!important}
+html.fm-ext[data-adv="1"] #topbar{top:46px}
+html.fm-ext:not([data-adv="1"]) #topbar>.fm-core::after,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind::after,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv::before{inset:-5px}
+html.fm-ext:not([data-adv="1"]) #topbar>.fm-core,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv{border-color:rgba(60,50,20,.32)}
+}</style><script>if(/[#&]ext=1/.test(location.hash))document.documentElement.classList.add("fm-ext")</script><!--/phonefix2--></body>
 </html>

@@ -1,6 +1,6 @@
 /* 볕결 세종 — 블로그 첫 화면 스타일 (v2) */
 #bg-home{
-  --cream:#f5eddc;--cream-2:#efe5cd;--paper:#fffaf0;--olive:#56632d;--olive-deep:#2f3819;--ink:#2b2a1e;--ink-2:#6b6a55;
+  --cream:#f5eddc;--cream-2:#efe5cd;--paper:#fffaf0;--olive:#56632d;--olive-deep:#2f3819;--ink:#2b2a1e;--ink-2:#5a5944;
   --sun:#e8a33d;--sun-soft:#f6d9a0;--line:#dccfae;--r-map:24px;
   --shadow-1:0 1px 2px rgba(60,50,20,.08),0 8px 24px rgba(60,50,20,.08);
   --shadow-map:0 2px 4px rgba(60,50,20,.10),0 24px 60px rgba(47,56,25,.22);
@@ -145,7 +145,7 @@ body.feed-view .centered-top-firstline,body.feed-view .main_header_elements,body
 #bg-home{--stage-h:clamp(520px,calc(100svh - 214px),860px);word-break:keep-all;line-break:strict;font-synthesis:none}
 #bg-home .bg-stage{height:var(--stage-h);box-shadow:var(--shadow-map),inset 0 0 0 1px rgba(47,56,25,.14)}
 #bg-home .bg-sub{text-wrap:balance}
-#bg-home .bg-chip.all b{color:#6b6a55;font-variant-numeric:tabular-nums}
+#bg-home .bg-chip.all b{color:#5a5944;font-variant-numeric:tabular-nums}
 #bg-home .bg-chip:focus-visible,#bg-home .bg-seg button:focus-visible,#bg-home .bg-fs:focus-visible{outline:none;box-shadow:0 0 0 2px #f5eddc,0 0 0 5px #2f3819}
 #bg-home .bg-chip.on:focus-visible{box-shadow:0 0 0 2px #f5eddc,0 0 0 5px #2f3819}
 #bg-home .bg-chip.on{border:2px solid transparent}
@@ -221,14 +221,14 @@ body.feed-view .centered-top{padding-top:0!important}
   #bg-home .bg-seg{padding:2px;border-radius:9px}
   #bg-home .bg-seg button{position:relative;height:24px;padding:0 9px;font-size:12px;border-radius:7px}
   #bg-home .bg-seg button::after{content:"";position:absolute;inset:-8px 0}
-  #bg-home .bg-fs{position:relative;width:34px;height:34px;border-radius:50%;background:rgba(255,250,240,.88);border:1px solid rgba(60,50,20,.12);box-shadow:0 2px 8px rgba(20,25,10,.18)}
-  #bg-home .bg-fs.bg-share{border:1px solid rgba(60,50,20,.12);background:rgba(255,250,240,.88)}
-  #bg-home .bg-fs::after{content:"";position:absolute;inset:-5px}
+  #bg-home .bg-fs{position:relative;width:34px;height:34px;border-radius:50%;background:rgba(255,250,240,.88);border:1px solid rgba(60,50,20,.32);box-shadow:0 2px 8px rgba(20,25,10,.18)}
+  #bg-home .bg-fs.bg-share{border:1px solid rgba(60,50,20,.32);background:rgba(255,250,240,.88)}
+  #bg-home .bg-fs::after{content:"";position:absolute;inset:-6px}
   #bg-home .bg-fs svg{width:16px;height:16px}
   #bg-home .bg-say{bottom:calc(8px + 26px + 10px + 36px + 10px)}
 }
 @media (max-width:900px) and (max-height:520px) and (orientation:landscape){
-  #bg-home{--stage-h:calc(100svh - 16px)}
+  #bg-home{--stage-h:calc(100svh - 80px)}
   #bg-home .bg-head{display:none}
   #bg-home .bg-rail{margin-bottom:6px}
 }
