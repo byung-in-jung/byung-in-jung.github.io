@@ -5230,7 +5230,7 @@ const VWO = (() => {
     } else { send({ t: 'cam', cam: ourCam() }); }      // 다시 켤 때: 새 카메라를 보내면 iframe 이 영상이 맞는지 다시 확인하고 'done' 을 다시 보낸다
     show(false, true);
   }
-  function loaded() { if (st.state !== 'loading') return; if (window.__vwRevealGate && window.__vwRevealGate(loaded)) return; /*marksync1*/ if (!st.moved && st.intent && S.mode !== 'walk') { Object.assign(V, st.intent); tween = null; try { send({ t: 'cam', cam: ourCam() }); } catch (e) { /* 곧 다시 보냄 */ } } /* 덮기 시작 뒤 사용자가 만지지 않았으면 켤 때의 시점을 그대로 유지 */ st.state = 'on'; st.wasDone = true; clearInterval(st.tm); label(); veil(false); show(true); showBar(true, true); say('브이월드가 위에 덮여 있어요. 끌어서 움직여 보세요.'); shStart(); }
+  function loaded() { if (st.state !== 'loading') return; if (!st.moved && st.intent && S.mode !== 'walk') { Object.assign(V, st.intent); tween = null; try { send({ t: 'cam', cam: ourCam() }); } catch (e) { /* 곧 다시 보냄 */ } } /* 덮기 시작 뒤 사용자가 만지지 않았으면 켤 때의 시점을 그대로 유지 */ st.state = 'on'; st.wasDone = true; clearInterval(st.tm); label(); veil(false); show(true); showBar(true, true); say('브이월드가 위에 덮여 있어요. 끌어서 움직여 보세요.'); shStart(); }
   function retry() { const was = st.tries; teardown(); st.tries = was; turnOn(true); }
   async function turnOff(silent) {
     const was = st.on; let sn = null;
@@ -5810,14 +5810,14 @@ function toast(m,ms){tt.textContent=m;tt.classList.add('on');clearTimeout(timer)
 function setState(s){if(s===cur)return;cur=s;tg.dataset.state=s;tg.querySelector('.vw-lb').textContent=LB[s];tg.setAttribute('aria-checked',(s==='on'||s==='loading')?'true':'false');tg.setAttribute('aria-busy',s==='loading'?'true':'false');tg.setAttribute('aria-disabled',(s==='auto'||s==='loading')?'true':'false')}
 function vwo(){return window.__vwo}
 function can(){var b=document.getElementById('bVw');return !!(b&&!b.classList.contains('dis')&&vwo())}
-function tick(){var v=vwo();if(!v||!v.st){return}if(autoOff){setState('auto');return}setState(v.st.on?(v.st.state==='on'?'on':(window.__vwSlow?'off':'loading')):'off')}
+function tick(){var v=vwo();if(!v||!v.st){return}if(autoOff){setState('auto');return}setState(v.st.on?(v.st.state==='on'?'on':'loading'):'off')}
 setInterval(tick,400);
 tg.addEventListener('click',function(){var v=vwo();if(!v||!can()){toast('이 주소에서는 브이월드를 켤 수 없어요');return}
  if(cur==='auto'){toast('일조 패널을 닫으면 다시 켜져요',2600);return}
  if(cur==='loading')return;
  if(cur==='on'){v.turnOff();toast('브이월드를 껐어요',1800)}else{v.turnOn();toast('브이월드 3D를 불러오는 중…',2000)}setTimeout(tick,60)});
 function ready(){var l=document.getElementById('loading');if(!l)return true;var c=getComputedStyle(l);return c.display==='none'||c.visibility==='hidden'||c.opacity==='0'||l.classList.contains('hide')}
-var pi=setInterval(function(){if(ready()){clearInterval(pi);try{parent.postMessage({type:"vw-ready"},"https://scity3d.blogspot.com")}catch(e){}}},300);var tried=false,iv=setInterval(function(){if(tried){clearInterval(iv);return}if(!can()||!ready())return;tried=true;clearInterval(iv);if(/[?&#]vw=0/.test(location.search+location.hash))return;setTimeout(function(){if(vwo().st&&!vwo().st.on&&!(window.__vwNoAuto&&window.__vwNoAuto()))vwo().turnOn()},700)},400);
+var pi=setInterval(function(){if(ready()){clearInterval(pi);try{parent.postMessage({type:"vw-ready"},"https://scity3d.blogspot.com")}catch(e){}}},300);var tried=false,iv=setInterval(function(){if(tried){clearInterval(iv);return}if(!can()||!ready())return;tried=true;clearInterval(iv);if(/[?&#]vw=0/.test(location.search+location.hash))return;setTimeout(function(){if(vwo().st&&!vwo().st.on)vwo().turnOn()},700)},400);
 function watchSun(){var p=document.getElementById('sun-panel');if(!p){setTimeout(watchSun,600);return}
  var last=!p.classList.contains('sun-hidden');
  new MutationObserver(function(){var open=!p.classList.contains('sun-hidden');if(open===last)return;last=open;var v=vwo();
@@ -6284,13 +6284,7 @@ body.hideall #vwChrome{display:none}
 #vfChip .vf-b{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:#2f3819;color:#fffaf0;font:inherit;cursor:pointer;white-space:nowrap}
 #vwpop .vf-opt{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px}
 body.fm-window #vfChip{display:none!important}
-@media (max-width:720px),(max-height:620px){#vfChip{top:62px;font-size:12px}}
-#vsChip{position:fixed;z-index:66;left:50%;top:70px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:6px 6px 6px 14px;border-radius:999px;background:rgba(255,250,240,.96);color:#2f3819;border:1px solid rgba(60,50,20,.2);box-shadow:0 4px 16px rgba(20,25,10,.28);font:600 13px/1.2 var(--font,"Malgun Gothic",system-ui,sans-serif)}
-#vsChip[hidden]{display:none}
-#vsChip .vf-b{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:#2f3819;color:#fffaf0;font:inherit;cursor:pointer;white-space:nowrap}
-#vwFrame{transition:opacity .4s ease}
-body.fm-window #vsChip{display:none!important}
-@media (max-width:720px),(max-height:620px){#vsChip{top:62px;font-size:12px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
+@media (max-width:720px),(max-height:620px){#vfChip{top:62px;font-size:12px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
    엔진(sun.js)은 그대로: SUN.state(min/doy/playing/paused/shadow), SUN.setTime/setDate, 패널 안 숨은 버튼(#sun-pd/#sun-pp/#sun-sh/#sun-now/[data-p])을 대리 조작한다.
    declutter1·wmark1 뒤 마지막에 주입. 큰 패널은 ⌄ 로만 연다. */
 (function () {
@@ -6551,7 +6545,7 @@ body.fm-window #vsChip{display:none!important}
       if (vwOn) { if (chip && chip.dataset.mode !== 'back') chip.hidden = true; }
       else {
         show('out');
-        if (!declined && !autoDid && lsG('fm-vw-auto') !== '0' && !((+lsG('fm-vw-slow') || 0) > Date.now()) && o && performance.now() - outSince > 1000) { autoDid = true; o.turnOn(); }
+        if (!declined && !autoDid && lsG('fm-vw-auto') !== '0' && !lsG('fm-vw-slow') && o && performance.now() - outSince > 1000) { autoDid = true; o.turnOn(); }
       }
     } else {
       outSince = 0; declined = false;
@@ -6563,50 +6557,5 @@ body.fm-window #vsChip{display:none!important}
     var l = d.createElement('label'); l.className = 'vf-opt'; l.innerHTML = '<input type="checkbox"> 범위 밖에서는 자동으로 위성 켜기'; var cb = l.querySelector('input'); cb.checked = lsG('fm-vw-auto') !== '0'; cb.addEventListener('change', function () { lsS('fm-vw-auto', cb.checked ? '1' : '0'); }); p.insertBefore(l, n);
   }
   setInterval(function () { try { tick(); opt(); } catch (e) { /* 아직 준비 전 */ } }, 300);
-})();
-
-/* vwsync1: 브이월드 첫 화면 = 켜기 직전 우리 화면. (a) 로딩 중 우리 지도를 움직이면 브이월드 카메라도 계속 따라간다. (b) 공개(reveal) 직전 두 카메라를 비교(위치 5 m·지면 높이 5 m·방위 1°·기울기 1°)해 넘으면 다시 맞춘 뒤 공개(최대 3회). (c) 느리면(25초, 폰/약한 기기 15초) 우리 지도 유지 + 칩, 준비되면 '켜기' 제안(자동 전환 없음). 24시간 기억(fm-vw-slow). */
-(function () {
-  if (window.__vs1) return; window.__vs1 = 1;
-  var d = document, passed = false, busy = false, slow = false, chip = null, chipMode = '', chipGo = null, lastKey = '', lastSend = 0, snapN = 9000000;
-  var LOG = window.__vwSyncLog = [];
-  function lsG(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-  function lsS(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* */ } }
-  function weak() { try { return matchMedia('(pointer:coarse)').matches && ((navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)); } catch (e) { return false; } }
-  function limit() { try { return (matchMedia('(pointer:coarse)').matches || weak()) ? 15000 : 25000; } catch (e) { return 25000; } }
-  window.__vwNoAuto = function () { return (+lsG('fm-vw-slow') || 0) > Date.now() || weak(); };
-  window.__vwSlow = false;
-  function send(m) { var o = window.__vwo; if (o && o.st && o.st.fr && o.st.fr.contentWindow) o.st.fr.contentWindow.postMessage(Object.assign({ vwo: 1 }, m), location.origin); }
-  function sendCam() { var o = window.__vwo; try { send({ t: 'cam', cam: o.ourCam() }); } catch (e) { /* 곧 다시 */ } }
-  function snapP() { return new Promise(function (res) { var id = ++snapN, tm = setTimeout(function () { window.removeEventListener('message', on); res(null); }, 1500); function on(e) { var m = e.data; if (m && m.vwo && m.t === 'snap' && m.id === id) { clearTimeout(tm); window.removeEventListener('message', on); res(m.snap); } } window.addEventListener('message', on); send({ t: 'get', id: id }); }); }
-  function cmp(sn, c) { var dx = (sn.lon - c.lon) * 89503, dy = (sn.lat - c.lat) * 110574, pos = Math.hypot(dx, dy), da = Math.abs((sn.agl == null ? c.agl : sn.agl) - c.agl), dh = Math.abs(((sn.heading - c.heading + 540) % 360) - 180), dp = Math.abs(sn.pitch - c.pitch); return { pos: +pos.toFixed(2), agl: +da.toFixed(2), head: +dh.toFixed(2), pitch: +dp.toFixed(2), ok: pos <= 5 && da <= 5 && dh <= 1 && dp <= 1, t: Math.round(performance.now()) }; }
-  function mk() { if (chip) return chip; chip = d.createElement('div'); chip.id = 'vsChip'; chip.setAttribute('role', 'status'); chip.hidden = true; chip.innerHTML = '<span class="vf-t"></span><button type="button" class="vf-b"></button>'; d.body.appendChild(chip); chip.querySelector('.vf-b').addEventListener('click', function () { var m = chipMode; hide(); if (m === 'slow') { slow = false; window.__vwSlow = false; } else if (m === 'ready') { slow = false; window.__vwSlow = false; var g = chipGo; chipGo = null; if (g) g(); } }); return chip; }
-  function show(mode) { mk(); chipMode = mode; chip.querySelector('.vf-t').textContent = mode === 'ready' ? '브이월드 준비됐어요' : '브이월드가 느려 우리 지도로 보여드려요'; chip.querySelector('.vf-b').textContent = mode === 'ready' ? '켜기' : '다시 켜기'; chip.hidden = false; }
-  function hide() { if (chip) chip.hidden = true; chipMode = ''; }
-  window.__vwRevealGate = function (go) {
-    if (passed) { passed = false; return false; }
-    if (busy) return true; var o = window.__vwo; if (!o || !o.st) return false; busy = true;
-    (async function () {
-      try {
-        if (slow) { show('ready'); await new Promise(function (res) { chipGo = res; }); }
-        for (var i = 0; i < 3; i++) {
-          var sn = await snapP(); if (!sn) break; var c = cmp(sn, o.ourCam()); LOG.push(c); if (c.ok || !isFinite(c.head) || !isFinite(c.pitch)) break;
-          sendCam(); await new Promise(function (r) { setTimeout(r, 600); });
-        }
-      } catch (e) { /* 공개는 계속 */ }
-      busy = false; passed = true; go();
-    })();
-    return true;
-  };
-  setInterval(function () {
-    try {
-      var o = window.__vwo, sa = window.__sa; if (!o || !o.st || !sa) return;
-      if (!o.st.on || o.st.state !== 'loading') { if (!o.st.on) { slow = false; window.__vwSlow = false; } return; }
-      if (!slow && !busy && o.st.t0 && performance.now() - o.st.t0 > limit()) { slow = true; window.__vwSlow = true; lsS('fm-vw-slow', String(Date.now() + 86400000)); show('slow'); setTimeout(function () { if (chipMode === 'slow') hide(); }, 8000); }
-      if (!o.st.ready || !o.st.fr) return;
-      var V = sa.V, W = sa.WK, walk = sa.S && sa.S.mode === 'walk', key = walk ? [W.x, W.y, W.yaw, W.pitch, W.zAbs].join() : [V.tx, V.ty, V.tz, V.yaw, V.pitch, V.dist].join();
-      if (key !== lastKey && performance.now() - lastSend > 100) { lastKey = key; lastSend = performance.now(); sendCam(); }
-    } catch (e) { /* 아직 준비 전 */ }
-  }, 120);
 })();</script><!--/daystrip1--></body>
 </html>
