@@ -6137,7 +6137,7 @@ html body #sun-clock,html body.hideall #sun-clock,html body #sun-clock:not(.sun-
 html #fmDayCore,html #topbar>#fmDayCore{display:none!important}
 #ds1{position:fixed;width:264px;left:50%;transform:translateX(-50%);bottom:44px;z-index:5;height:28px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 4px 0 2px;max-width:calc(100vw - 16px);border-radius:14px;background:var(--glass-solid,rgba(255,250,240,.94));color:var(--tx,#2b2a22);border:1px solid var(--line2,rgba(60,50,20,.22));box-shadow:0 2px 10px rgba(30,40,15,.2);font:10.5px/1 var(--font,system-ui,'Malgun Gothic',sans-serif);user-select:none;-webkit-user-select:none}
 #ds1[hidden]{display:none}
-body.fm-window #ds1,body.hideall #ds1{display:none}
+body.hideall #ds1{display:none}
 #ds1.ds-phone{left:8px;transform:none}
 #ds1 button{position:relative;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #ds1 button::before{content:"";position:absolute;left:-10px;right:-10px;top:-9px;bottom:-9px}
@@ -6159,7 +6159,50 @@ body.fm-window #ds1,body.hideall #ds1{display:none}
 #ds1 .ds-pop[hidden]{display:none}
 #ds1 .ds-pop button{height:28px;padding:0 9px;border-radius:14px;font-size:12px}
 #ds1 .ds-pop button:hover{background:rgba(120,100,30,.16)}
-@media (max-width:420px){#ds1 .ds-rs{font-size:10px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
+@media (max-width:420px){#ds1 .ds-rs{font-size:10px}}
+/* ---- 큰 화면: 도크 아이콘·라벨·스트립·표식을 뷰포트에 비례해 키운다(폰 36px·태블릿은 그대로) ---- */
+@media (min-width:1100px) and (min-height:621px){
+ :root{--di:40px;--dg:19px;--dl:15px}
+ html:not([data-adv="1"]) #topbar>.fm-core,html:not([data-adv="1"]) #topbar>#bAdv,html:not([data-adv="1"]) #topbar>#aList,html:not([data-adv="1"]) #topbar>#fmFind,
+ html.fm-ext:not([data-adv="1"]) #topbar>.fm-core,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind{min-width:var(--di)!important;height:var(--di)!important;min-height:var(--di)!important}
+ html:not([data-adv="1"]) #topbar>#bAdv,html:not([data-adv="1"]) #topbar>#aList,html:not([data-adv="1"]) #topbar>#fmFind,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind{width:var(--di)!important}
+ html:not([data-adv="1"]) #topbar>.fm-core,html.fm-ext:not([data-adv="1"]) #topbar>.fm-core{width:auto!important;padding:0 calc(var(--di)*.32)!important;display:inline-flex!important;align-items:center;justify-content:center}
+ html:not([data-adv="1"]) #topbar>.fm-core::before,html:not([data-adv="1"]) #topbar>#bAdv::before,html:not([data-adv="1"]) #topbar>#aList::before,html.fm-ext:not([data-adv="1"]) #topbar>.fm-core::before,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv::before{font-size:var(--dl)!important;font-weight:600}
+ html:not([data-adv="1"]) #topbar>#bAdv::before,html:not([data-adv="1"]) #topbar>#aList::before{font-size:var(--dg)!important}
+ html:not([data-adv="1"]) #fmSunCore::before,html.fm-ext #fmSunCore::before{content:"\2600\FE0E  일조"!important}
+ html:not([data-adv="1"]) #fmWindowCore::before,html.fm-ext #fmWindowCore::before{content:"\25A3  창가"!important}
+ html:not([data-adv="1"]) #fmFlowCore::before,html.fm-ext #fmFlowCore::before{content:"\2197  동선"!important}
+ html:not([data-adv="1"]):not(.fm-ext) #topbar{top:14px!important;height:calc(var(--di) + 8px)!important}
+ html.fm-ext:not([data-adv="1"]) #topbar{top:14px!important}
+ html:not([data-adv="1"]) #topbar>.fm-core::after,html:not([data-adv="1"]) #topbar>#bAdv::after,html:not([data-adv="1"]) #topbar>#aList::after,html:not([data-adv="1"]) #topbar>#fmFind::after,html.fm-ext:not([data-adv="1"]) #topbar>.fm-core::after,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv::before{inset:-4px!important}
+ #wmLayer .wm-i{left:11px;top:11px;width:22px;height:22px}
+}
+@media (min-width:1600px) and (min-height:621px){
+ :root{--di:44px;--dg:21px;--dl:16px}
+ #wmLayer .wm-i,#wmLayer .wm-i svg{width:32px;height:32px}#wmLayer .wm-i{left:6px;top:6px}
+ #ds1{height:36px;width:344px;border-radius:18px;font-size:13.5px;gap:6px}
+ #ds1 .ds-p{width:30px;height:30px}#ds1 .ds-p i{border-left-width:10px;border-top-width:6px;border-bottom-width:6px}
+ #ds1 .ds-rs{font-size:13.5px}#ds1 .ds-tr{height:30px}#ds1 .ds-bar{top:13px;height:5px;border-radius:3px}
+ #ds1 .ds-dot{top:15.5px;width:18px;height:18px;margin:-9px 0 0 -9px}
+ #ds1 .ds-c,#ds1 .ds-m{width:28px;height:28px;font-size:17px}#ds1 .ds-c svg{width:17px;height:17px}
+ #ds1 .ds-pop{bottom:44px}#ds1 .ds-pop button{height:34px;font-size:14px}#ds1 .ds-bub{font-size:13px;bottom:28px}
+}
+@media (min-width:2200px) and (min-height:621px){
+ :root{--di:52px;--dg:25px;--dl:19px}
+ #ds1{height:44px;width:420px;border-radius:22px;font-size:16px}#ds1 .ds-p{width:36px;height:36px}#ds1 .ds-rs{font-size:16px}#ds1 .ds-tr{height:36px}#ds1 .ds-bar{top:16px;height:6px}#ds1 .ds-dot{top:19px;width:22px;height:22px;margin:-11px 0 0 -11px}
+ #ds1 .ds-c,#ds1 .ds-m{width:34px;height:34px;font-size:20px}#ds1 .ds-pop{bottom:52px}#ds1 .ds-bub{font-size:15px;bottom:34px}
+}
+
+/* ---- 창가 시점: 스트립은 계속 보이고(☀ 로 열고 닫음), 나가기 알약은 눈에 띄게 ---- */
+@keyframes ds-pulse{0%{box-shadow:0 0 0 0 rgba(240,138,28,.85)}100%{box-shadow:0 0 0 18px rgba(240,138,28,0)}}
+@media (min-width:721px) and (min-height:621px){
+ #winBar{left:50%!important;right:auto!important;transform:translateX(-50%)!important;top:calc(var(--di,36px) + 32px)!important;max-width:min(560px,calc(100vw - 20px))!important;z-index:80!important;box-shadow:0 3px 14px rgba(0,0,0,.35);animation:ds-pulse 1.5s ease-out 1!important}
+ #winBar #winExit{height:34px!important;min-height:34px!important;padding:0 14px!important}
+ #winBar #winExit::after{content:"✕  나가기 · Esc";font-size:14px;line-height:34px}
+}
+@media (min-width:1600px) and (min-height:621px){
+ #winBar #winTxt{font-size:14px;max-width:260px}#winBar #winExit{height:44px!important;min-height:44px!important;padding:0 18px!important}#winBar #winExit::after{font-size:15px;line-height:44px}
+}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
    엔진(sun.js)은 그대로: SUN.state(min/doy/playing/paused/shadow), SUN.setTime/setDate, 패널 안 숨은 버튼(#sun-pd/#sun-pp/#sun-sh/#sun-now/[data-p])을 대리 조작한다.
    declutter1·wmark1 뒤 마지막에 주입. 큰 패널은 ⌄ 로만 연다. */
 (function () {
@@ -6214,10 +6257,13 @@ body.fm-window #ds1,body.hideall #ds1{display:none}
     ['footer', 'timebar'].forEach(function (id) { var e = $(id); if (e && e.getClientRects().length) { var r = e.getBoundingClientRect(); if (r.height > 4 && r.top > H * 0.4) top = Math.min(top, r.top); } });
     if (phone) { var tb = $('topbar'); if (tb) { var r2 = tb.getBoundingClientRect(); if (r2.height > 4 && r2.top > H * 0.5) top = Math.min(top, r2.top); } }
     strip.style.bottom = Math.max(4, H - top + 8) + 'px';
+    /* 창가 요약 카드·나가기 알약(폰)·건물 카드와 겹치면 그 위로 비킨다 */
+    for (var k = 0; k < 3; k++) { var sr = strip.getBoundingClientRect(), moved = false; ['wvCard', 'winBar', 'card'].forEach(function (id) { var e = $(id); if (!e || !e.getClientRects().length || getComputedStyle(e).display === 'none') return; var r = e.getBoundingClientRect(); if (r.height < 4 || r.top < H * 0.35) return; if (r.right > sr.left && r.left < sr.right && r.bottom > sr.top && r.top < sr.bottom) { strip.style.bottom = (H - r.top + 6) + 'px'; sr = strip.getBoundingClientRect(); moved = true; } }); if (!moved) break; }
     strip.classList.toggle('ds-phone', phone);
   }
   function tick(force) {
     if (!open || !strip) return; var S = st(); if (!S) return;
+    var core0 = $('fmSunCore'); if (core0) { if (!core0.classList.contains('on')) core0.classList.add('on'); if (core0.getAttribute('aria-pressed') !== 'true') core0.setAttribute('aria-pressed', 'true'); }      /* 엔진이 패널 상태에 맞춰 on 을 지우므로 스트립이 열려 있는 동안 다시 켠다 */
     var rs = riseSet(), a = rs[0], z = rs[1], g = (a == null || z == null) ? [0, 1440] : [a, z], m = S.min % 1440, f = Math.max(0, Math.min(1, (m - g[0]) / Math.max(1, g[1] - g[0])));
     var day = m >= g[0] && m <= g[1], playing = !!S.playing && !S.paused, key = [m | 0, S.doy, !!S.playing, !!S.paused, a, z, day, drag].join();
     if (key !== last || force) {
