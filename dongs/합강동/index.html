@@ -1014,7 +1014,7 @@ button.sun-b{font-size:13px}
 <style id="fm-geo">#gRes .gsec{font-size:11px;color:var(--mut);padding:6px 8px 2px;letter-spacing:.04em}
 #gRes .gprec{font-weight:600}#gRes .gp-exact,#gRes .gp-vw_parcel,#gRes .gp-vw_road,#gRes .gp-vw_place{color:var(--ok,#0a7c4a)}#gRes .gp-road{color:var(--warn,#b45309)}#gRes .gp-area,#gRes .gp-online{color:var(--mut)}
 #gRes .gnote{font-size:11px;color:var(--mut);padding:4px 8px;line-height:1.4}#gRes .gonline small{display:block;margin-top:2px}</style>
-<style id="public-imagery-policy">#bVw,#bVwChip,#vwBox,#vwVeil,#vwCtl,#vwSplit,#vwAttr,#vwCapRow,#vwCapNote{display:none!important}</style><style id="public-simple-ui">
+<style id="public-imagery-policy">#bVw,#bVwChip,#vwBox,#vwVeil,#vwAttr{display:none!important}</style><!--vwpanel1: 라이선스 확인 완료 -> #vwCtl #vwSplit #vwCapRow #vwCapNote 숨김 해제--><style id="public-simple-ui">
 html:not([data-adv="1"]) #topbar>:not(#aList):not(#fmFind):not(.fm-core):not(#bAdv):not(#advFlowChip){display:none!important}
 html:not([data-adv="1"]) #advFlowChip,html:not([data-adv="1"]) #cols,html:not([data-adv="1"]) #fmFab{display:none!important}
 #topbar>.fm-core{min-height:44px;padding:8px 14px;font-size:14px}
@@ -6315,7 +6315,33 @@ body.hideall #ds1{display:none}
 }
 @media (min-width:1600px) and (min-height:621px){
  #winBar #winTxt{font-size:14px;max-width:260px}#winBar #winExit{height:44px!important;min-height:44px!important;padding:0 18px!important}#winBar #winExit::after{font-size:15px;line-height:44px}
-}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
+}
+
+/* ---- vwpanel1: 브이월드 팝오버 ---- */
+#vwpop{position:fixed;z-index:70;left:12px;top:62px;width:280px;max-width:calc(100vw - 16px);box-sizing:border-box;padding:10px 12px;border-radius:14px;background:var(--glass-solid,#fffaf0);color:var(--tx,#2b2a22);border:1px solid var(--line2,rgba(60,50,20,.25));box-shadow:0 6px 22px rgba(20,25,10,.3);font:13px/1.4 var(--font,system-ui,"Malgun Gothic",sans-serif)}
+#vwpop[hidden]{display:none}
+#vwpop .vp-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:14px}
+#vwpop .vp-x{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:16px;cursor:pointer}
+#vwpop .vp-sw{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+#vwpop .vp-t{position:relative;width:48px;height:28px;border:0;border-radius:14px;background:#b9b4a0;cursor:pointer;padding:0}
+#vwpop .vp-t i{position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s}
+#vwpop .vp-t[aria-checked="true"]{background:#56632d}#vwpop .vp-t[aria-checked="true"] i{transform:translateX(20px)}
+#vwpop .vp-t::before{content:"";position:absolute;inset:-8px}
+#vwpop .vp-off{font-size:12.5px;opacity:.85;margin:2px 0 6px}
+#vwpop.vp-on .vp-off{display:none}#vwpop:not(.vp-on) .vp-body{display:none}
+#vwpop .vp-body #vwCtl{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+#vwpop .vwl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}#vwpop input[type=range]{flex:1;min-width:110px}
+#vwpop .btn{min-height:40px;padding:4px 12px;font-size:14px}
+#vwpop #vwShCtl{display:flex;flex-direction:column;gap:8px}#vwpop #vwShCtl[hidden]{display:none}
+#vwpop .vp-cap{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}#vwpop .vp-cap[hidden]{display:none}
+#vwpop .vp-capb{border:1px solid var(--line2,rgba(60,50,20,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;min-height:36px;padding:0 12px;cursor:pointer}
+#vwpop .vp-note{margin:8px 0 0;font-size:12px;opacity:.85}
+#vwpBtn{position:fixed;z-index:61;width:36px;height:36px;border:1px solid #e4d9bd;border-radius:50%;background:rgba(255,255,255,.97);color:#2b2a1f;font-size:15px;line-height:1;cursor:pointer;padding:0}
+#vwpBtn::before{content:"";position:absolute;inset:-4px}
+#vwpSet.on{background:var(--acc);color:var(--on-acc,#04202e)}
+body.fm-window #vwpop,body.fm-window #vwpBtn{display:none!important}
+@media (max-width:720px),(max-height:620px){#vwpop{left:0!important;right:0;top:auto!important;width:auto;max-width:none;max-height:40vh;overflow:auto;border-radius:14px 14px 0 0}}
+@media (min-width:1600px){#vwpop{width:340px;font-size:15px}#vwpop .btn{min-height:44px;font-size:15px}#vwpBtn{width:40px;height:40px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
    엔진(sun.js)은 그대로: SUN.state(min/doy/playing/paused/shadow), SUN.setTime/setDate, 패널 안 숨은 버튼(#sun-pd/#sun-pp/#sun-sh/#sun-now/[data-p])을 대리 조작한다.
    declutter1·wmark1 뒤 마지막에 주입. 큰 패널은 ⌄ 로만 연다. */
 (function () {
@@ -6412,5 +6438,55 @@ body.hideall #ds1{display:none}
   }
   var n = 0, iv = setInterval(function () { if (hook() || ++n > 400) clearInterval(iv); }, 150);
   addEventListener('resize', place);
+})();
+
+/* vwpanel1: 브이월드 컨트롤 팝오버(좌상단 칩 옆 ⌄ 또는 ⋯ 설정의 '브이월드 설정'). 옛 하단 덮기 줄(#vwBox)의 컨트롤(#vwCtl)을 그대로 옮겨 쓴다. */
+(function () {
+  if (window.__vp1) return; window.__vp1 = 1;
+  var d = document, $ = function (i) { return d.getElementById(i); }, pop = null, btn = null, isOpen = false, ext = /[#&]ext=1/.test(location.hash);
+  function vwo() { return window.__vwo; }
+  function build() {
+    if (pop) return pop;
+    pop = d.createElement('div'); pop.id = 'vwpop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', '브이월드 설정');
+    pop.innerHTML = '<div class="vp-h"><b>브이월드 위성</b><button type="button" class="vp-x" aria-label="브이월드 설정 닫기">✕</button></div>' +
+      '<div class="vp-sw"><span>위성 영상 덮기</span><button type="button" class="vp-t" role="switch" aria-checked="false" aria-label="브이월드 켜기/끄기"><i></i></button></div>' +
+      '<div class="vp-off">꺼져 있어요. 켜면 위성 영상과 3D 건물이 위에 덮여요.</div><div class="vp-body"></div>' +
+      '<div class="vp-cap"><span>영상 촬영 시각</span><button type="button" class="vp-capb"></button></div>' +
+      '<p class="vp-note">브이월드 영상에 구워진 그림자는 움직이지 않아요. 움직이는 그림자는 우리가 계산한 것이에요.</p>';
+    d.body.appendChild(pop);
+    pop.querySelector('.vp-x').addEventListener('click', function () { setOpen(false); });
+    pop.querySelector('.vp-t').addEventListener('click', function () { var o = vwo(); if (!o) return; if (o.st.on) o.turnOff(); else o.turnOn(); setTimeout(sync, 300); });
+    pop.querySelector('.vp-capb').addEventListener('click', function () { var c = $('vwCapChip'); if (c) c.click(); });
+    return pop;
+  }
+  function sync() {
+    if (!pop) return; var o = vwo(), on = !!(o && o.st && o.st.on), t = pop.querySelector('.vp-t');
+    t.setAttribute('aria-checked', String(on)); pop.classList.toggle('vp-on', on);
+    var body = pop.querySelector('.vp-body'), ctl = $('vwCtl'); if (ctl && ctl.parentNode !== body) body.appendChild(ctl);
+    var c = $('vwCapChip'), row = pop.querySelector('.vp-cap'); row.hidden = !c; if (c) { var mt = /추정: (.+?)\)로/.exec(c.title || ''); pop.querySelector('.vp-capb').textContent = mt ? mt[1] + ')' : c.textContent.trim(); }
+    var a = $('vwAttr'); if (a && /외부 공개 금지/.test(a.textContent)) a.textContent = '브이월드(국토교통부)';
+  }
+  function place() {
+    if (!pop || pop.hidden) return; var tg = $('vwTg'), phone = matchMedia('(max-width:720px),(max-height:620px)').matches;
+    if (phone) { var f = $('footer'); pop.style.bottom = (f ? f.offsetHeight : 28) + 'px'; pop.style.left = pop.style.top = ''; return; }
+    var r = tg && tg.getBoundingClientRect(); pop.style.bottom = ''; pop.style.left = Math.max(8, r && r.width ? r.left : 12) + 'px'; pop.style.top = Math.round((r && r.width ? r.bottom : 56) + 8) + 'px';
+  }
+  var tmr = 0;
+  function setOpen(v) {
+    build(); isOpen = !!v; pop.hidden = !isOpen; if (btn) btn.setAttribute('aria-expanded', String(isOpen));
+    var sb = $('vwpSet'); if (sb) { sb.classList.toggle('on', isOpen); sb.setAttribute('aria-pressed', String(isOpen)); }
+    clearInterval(tmr); if (isOpen) { sync(); place(); tmr = setInterval(function () { sync(); place(); if (d.body.classList.contains('fm-window')) setOpen(false); }, 500); }
+  }
+  window.__fmVwPanel = { open: function () { setOpen(true); }, close: function () { setOpen(false); }, toggle: function () { setOpen(!isOpen); } };
+  d.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isOpen) setOpen(false); });
+  d.addEventListener('pointerdown', function (e) { if (isOpen && pop && !pop.contains(e.target) && e.target !== btn && !(e.target.closest && e.target.closest('#vwpSet'))) setOpen(false); }, true);
+  function entry() {
+    var tb = $('topbar'), tg = $('vwTg');
+    if (tb && !$('vwpSet')) { var b = d.createElement('button'); b.type = 'button'; b.className = 'btn'; b.id = 'vwpSet'; b.textContent = '브이월드 설정'; b.setAttribute('aria-pressed', 'false'); b.title = '위성(브이월드) 투명도·반반 비교·그림자·촬영 시각'; b.addEventListener('click', function () { setOpen(!isOpen); }); var th = $('bTheme'); tb.insertBefore(b, th || null); }
+    if (tg && !ext && !btn) { btn = d.createElement('button'); btn.type = 'button'; btn.id = 'vwpBtn'; btn.setAttribute('aria-label', '브이월드 설정 열기'); btn.setAttribute('aria-expanded', 'false'); btn.textContent = '⌄'; btn.addEventListener('click', function () { setOpen(!isOpen); }); d.body.appendChild(btn); }
+    if (btn && tg) { var r = tg.getBoundingClientRect(); if (r.width) { btn.style.left = Math.round(r.right + 4) + 'px'; btn.style.top = Math.round(r.top + (r.height - btn.offsetHeight) / 2) + 'px'; btn.style.display = (d.body.classList.contains('fm-window') || d.body.classList.contains('hideall')) ? 'none' : ''; } }
+  }
+  setInterval(function () { try { entry(); } catch (e) { /* 아직 준비 전 */ } }, 700);
+  addEventListener('resize', function () { place(); try { entry(); } catch (e) { /* */ } });
 })();</script><!--/daystrip1--></body>
 </html>
