@@ -6359,7 +6359,14 @@ html:not(.fm-ext) #vwTg,html:not(.fm-ext) #vwpBtn{display:none!important}
 #vwChrome button:focus-visible{outline:3px solid #f0b24a;outline-offset:1px}
 body.hideall #vwChrome{display:none}
 @media (max-width:760px){#vwChrome{left:10px;top:10px;height:40px;gap:6px;padding:0 4px 0 12px;border-radius:12px}#vwChrome .vc-name{font-size:15px}#vwChrome .vc-seg button{min-width:38px;height:28px}}
-@media (min-width:1600px) and (min-height:621px){#vwChrome{height:52px;gap:10px;left:20px;top:18px}#vwChrome .vc-name{font-size:20px}#vwChrome .vc-seg button{height:38px;min-width:52px;font-size:16px}#vwChrome .vc-b{width:40px;height:40px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
+@media (min-width:1600px) and (min-height:621px){#vwChrome{height:52px;gap:10px;left:20px;top:18px}#vwChrome .vc-name{font-size:20px}#vwChrome .vc-seg button{height:38px;min-width:52px;font-size:16px}#vwChrome .vc-b{width:40px;height:40px}}
+/* ---- voidfix1 ---- */
+#vfChip{position:fixed;z-index:66;left:50%;top:70px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:6px 6px 6px 14px;border-radius:999px;background:rgba(255,250,240,.96);color:#2f3819;border:1px solid rgba(60,50,20,.2);box-shadow:0 4px 16px rgba(20,25,10,.28);font:600 13px/1.2 var(--font,"Malgun Gothic",system-ui,sans-serif)}
+#vfChip[hidden]{display:none}
+#vfChip .vf-b{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:#2f3819;color:#fffaf0;font:inherit;cursor:pointer;white-space:nowrap}
+#vwpop .vf-opt{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px}
+body.fm-window #vfChip{display:none!important}
+@media (max-width:720px),(max-height:620px){#vfChip{top:62px;font-size:12px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
    엔진(sun.js)은 그대로: SUN.state(min/doy/playing/paused/shadow), SUN.setTime/setDate, 패널 안 숨은 버튼(#sun-pd/#sun-pp/#sun-sh/#sun-now/[data-p])을 대리 조작한다.
    declutter1·wmark1 뒤 마지막에 주입. 큰 패널은 ⌄ 로만 연다. */
 (function () {
@@ -6581,5 +6588,56 @@ body.hideall #vwChrome{display:none}
   setInterval(function () { try { tick(); } catch (e) { /* 아직 준비 전 */ } }, 200);
   /* 블로그가 늦게 열리거나 장면이 다시 불러와져도 현재 이름을 다시 알린다 */
   window.addEventListener('message', function (e) { if (e.data && (e.data.type === 'vw-hello' || e.data.type === 'vw-set') && curName) publish(curName); });
+})();
+
+/* voidfix1: 지도 모드에서 지형·건물 범위 밖이 암흑 배경으로 보이지 않게 한다: 옅은 하늘색 배경+안개, 지형 바깥을 덮는 큰 지면 평면 1장. 범위 밖으로 가면 '위성으로 보기' 칩(+선택: 1초 뒤 자동 위성). */
+(function () {
+  if (window.__vf1) return; window.__vf1 = 1;
+  var d = document, $ = function (i) { return d.getElementById(i); }, inited = false, TB = null, chip = null, outSince = 0, autoDid = false, declined = false, sa = null;
+  function lsG(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsS(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* */ } }
+  function init() {
+    sa = window.__sa; if (!sa || !sa.ready || !sa.scene || !sa.THREE || !sa.D || !sa.D.nb || !sa.D.nb.terrain || !sa.renderer) return false;
+    var T = sa.THREE, sc = sa.scene; TB = sa.D.nb.terrain.bounds; if (!TB) return false;
+    var zs = []; for (var i = 0; i <= 16; i++) { var f = i / 16; [[TB[0] + 300 + (TB[2] - TB[0] - 600) * f, TB[1] + 300], [TB[0] + 300 + (TB[2] - TB[0] - 600) * f, TB[3] - 300], [TB[0] + 300, TB[1] + 300 + (TB[3] - TB[1] - 600) * f], [TB[2] - 300, TB[1] + 300 + (TB[3] - TB[1] - 600) * f]].forEach(function (p) { var z = sa.hAt(p[0], p[1]); if (isFinite(z)) zs.push(z); }); }
+    zs.sort(function (a, b) { return a - b; }); var zl = zs.length ? zs[Math.floor(zs.length * 0.1)] : 40;
+    var g = new T.PlaneGeometry(160000, 160000); g.rotateX(-Math.PI / 2);
+    var m = new T.Mesh(g, new T.MeshLambertMaterial({ color: 0xdde4cf })); m.position.set((TB[0] + TB[2]) / 2, zl - 4, -(TB[1] + TB[3]) / 2); m.renderOrder = -20; m.frustumCulled = false; m.userData.noPick = true; m.raycast = function () { /* 누를 수 없음 */ };
+    sc.add(m);
+    var sky = new T.Color(0xcfe0ec); sc.background = sky; try { window.dispatchEvent(new Event('fm-theme-bg')); } catch (e) { /* */ }
+    sc.fog = new T.Fog(0xcfe0ec, 9000, 32000); sc.fog.__vf = 1;
+    var r = sa.renderer, o = r.render; r.render = function (s, c) { try { var f = s && s.fog; if (f && f.__vf && s.background && s.background.isColor) { f.color.copy(s.background); var V = sa.V; if (V && isFinite(V.dist)) { f.near = Math.max(9000, V.dist * 3); f.far = f.near + 23000; } } } catch (e) { /* */ } return o.apply(this, arguments); };
+    return true;
+  }
+  function focus() { var s = window.__sa; if (!s || !s.V) return null; var walk = s.S && s.S.mode === 'walk' && s.WK; var x = walk ? s.WK.x : s.V.tx, y = walk ? s.WK.y : -s.V.tz; return isFinite(x) && isFinite(y) ? [x, y] : null; }
+  function outside(p) { return p[0] < TB[0] + 500 || p[0] > TB[2] - 500 || p[1] < TB[1] + 500 || p[1] > TB[3] - 500; }
+  function mk() {
+    if (chip) return chip; chip = d.createElement('div'); chip.id = 'vfChip'; chip.setAttribute('role', 'status'); chip.hidden = true;
+    chip.innerHTML = '<span class="vf-t"></span><button type="button" class="vf-b"></button>'; d.body.appendChild(chip);
+    chip.querySelector('.vf-b').addEventListener('click', function () { var o = window.__vwo; if (!o) return; if (chip.dataset.mode === 'back') { declined = true; o.turnOff(); } else { o.turnOn(); } chip.hidden = true; });
+    return chip;
+  }
+  function show(mode) { mk(); chip.dataset.mode = mode; chip.querySelector('.vf-t').textContent = mode === 'back' ? '지도 범위 안으로 돌아왔어요' : '여기는 지도 범위 밖이에요'; chip.querySelector('.vf-b').textContent = mode === 'back' ? '지도로 돌아가기' : '위성으로 보기'; chip.hidden = false; }
+  function tick() {
+    if (!inited) { inited = init(); if (!inited) return; }
+    var p = focus(); if (!p) return; var o = window.__vwo, vwOn = !!(o && o.st && o.st.on), out = outside(p), win = d.body.classList.contains('fm-window');
+    if (win) { if (chip) chip.hidden = true; return; }
+    if (out) {
+      if (!outSince) outSince = performance.now();
+      if (vwOn) { if (chip && chip.dataset.mode !== 'back') chip.hidden = true; }
+      else {
+        show('out');
+        if (!declined && !autoDid && lsG('fm-vw-auto') !== '0' && !lsG('fm-vw-slow') && o && performance.now() - outSince > 1000) { autoDid = true; o.turnOn(); }
+      }
+    } else {
+      outSince = 0; declined = false;
+      if (autoDid && vwOn) { show('back'); } else { if (chip) chip.hidden = true; if (!vwOn) autoDid = false; }
+    }
+  }
+  function opt() {
+    var p = $('vwpop'); if (!p || p.querySelector('.vf-opt')) return; var n = p.querySelector('.vp-note'); if (!n) return;
+    var l = d.createElement('label'); l.className = 'vf-opt'; l.innerHTML = '<input type="checkbox"> 범위 밖에서는 자동으로 위성 켜기'; var cb = l.querySelector('input'); cb.checked = lsG('fm-vw-auto') !== '0'; cb.addEventListener('change', function () { lsS('fm-vw-auto', cb.checked ? '1' : '0'); }); p.insertBefore(l, n);
+  }
+  setInterval(function () { try { tick(); opt(); } catch (e) { /* 아직 준비 전 */ } }, 300);
 })();</script><!--/daystrip1--></body>
 </html>
