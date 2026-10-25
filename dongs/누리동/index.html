@@ -6568,7 +6568,7 @@ body.fm-window #vfChip{display:none!important}
   function locate(G, x, y) {
     var idx = -1; for (var i = 0; i < G.length; i++) { var b = G[i].bbox, r = G[i].ringF; if (!r || !b) continue; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && pip(r, x, y)) { idx = i; break; } }
     if (idx === cur && idx >= 0) return idx;
-    if (cur >= 0 && G[cur] && G[cur].ringF && idx !== cur) { if (ringDist(G[cur].ringF, x, y) < 50) return cur; }      /* 경계 근처에서는 이전 동 유지 */
+    if (cur >= 0 && G[cur] && G[cur].ringF && idx !== cur) { if (ringDist(G[cur].ringF, x, y) < 20) return cur; }      /* 경계 근처에서는 이전 동 유지 */
     if (idx >= 0) return idx;
     var best = -1, bd = 1e9; for (var k = 0; k < G.length; k++) { var rr = G[k].ringF; if (!rr) continue; var bb = G[k].bbox; if (x < bb[0] - 400 || x > bb[2] + 400 || y < bb[1] - 400 || y > bb[3] + 400) continue; var dd = ringDist(rr, x, y); if (dd < bd) { bd = dd; best = k; } }
     return bd <= 300 ? (cur >= 0 && G[cur] && G[cur].ringF && ringDist(G[cur].ringF, x, y) <= 300 ? cur : best) : -1;
