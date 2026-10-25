@@ -4105,13 +4105,43 @@ function nearestPath(x, y, tol) {
     }
   }
   return best;
-}function pick(cx, cy) {
+}
+/*allbld1*/
+let CTXG = null;
+function ctxGrid() {
+  if (CTXG) return CTXG; const Q = SUN && SUN.getQ && SUN.getQ(); if (!Q) return null; const g = new Map(), C = 100;
+  for (const b of Q.buildings) { if (!b.ctx || !b.bbox) continue; const bb = b.bbox; for (let cx = Math.floor(bb[0] / C); cx <= Math.floor(bb[2] / C); cx++) for (let cy = Math.floor(bb[1] / C); cy <= Math.floor(bb[3] / C); cy++) { const k = cx * 100003 + cy; (g.get(k) || g.set(k, []).get(k)).push(b); } }
+  return (CTXG = { g, C });
+}
+function ctxBldAt(x, y, z) {      // 맞은 점(벽·지붕)에 가장 가까운 이웃 동 건물(윤곽까지 거리 3 m 이내, 높이 범위 안)
+  const G = ctxGrid(); if (!G) return null; const l = G.g.get(Math.floor(x / G.C) * 100003 + Math.floor(y / G.C)); if (!l) return null; let best = null, bd = 3;
+  for (const b of l) {
+    if (z < b.z0 - 3 || z > b.z1 + 3) continue; const R = b.ring; let ins = false, md = 1e9;
+    for (let i = 0, j = R.length - 1; i < R.length; j = i++) {
+      const xi = R[i][0], yi = R[i][1], xj = R[j][0], yj = R[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi) ins = !ins;
+      const vx = xi - xj, vy = yi - yj, L2 = vx * vx + vy * vy, t = L2 ? Math.max(0, Math.min(1, ((x - xj) * vx + (y - yj) * vy) / L2)) : 0, dd = Math.hypot(x - (xj + t * vx), y - (yj + t * vy)); if (dd < md) md = dd;
+    }
+    const d = ins ? 0 : md; if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+function showCtxBuilding(cb) {
+  const bb = cb.bbox, di = typeof nbDongAt === 'function' ? nbDongAt((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2) : -1, d = di > 0 ? NBDG[di] : null, id = cb.id, hh = Math.max(1, Math.round(cb.z1 - cb.z0)), fl = Math.max(1, Math.round(hh / 2.8));
+  openCard('<h2>이웃 동 건물' + (d ? ' · ' + esc(d.name) : '') + '</h2><div class="sub">이웃 동 건물 · 높이 추정 약 ' + hh + ' m · 약 ' + fl + '층 환산</div>' +
+    (SUN ? SUN.buildingScoreLine(id) : '') +
+    '<p class="bcAct">' + (SUN ? '<button class="chip" id="cbWin" title="이 건물 창가(벽 바로 바깥)에서 바깥 풍경 보기">여기서 밖 보기</button> <button class="chip" id="cbSun">시간대별 자세히</button> ' : '') + (d && d.link ? '<a class="chip" href="' + d.link + '">' + esc(d.name) + '에서 자세히 보기 →</a>' : '') + '</p>' +
+    '<details class="bcMore"><summary>자세히 보기 · 벽별 해 드는 시간</summary>' + (SUN ? '<details class="sun-card"><summary>동지 9~15시 벽별 해 드는 시간</summary>' + SUN.facadeHTML(id) + '</details>' : '') + '<p class="note">이웃 동 건물은 지도 자료의 윤곽과 추정 높이로 계산해요(점수 범위가 더 넓어요). 이름·단지 정보는 그 동 뷰어에서 볼 수 있어요.</p></details>');
+  const bs = document.getElementById('cbSun'); if (bs) bs.addEventListener('click', () => { SUN.open(); SUN.showBuilding(id); SUN.runQuery({ id }); });
+  const bw = document.getElementById('cbWin'); if (bw) bw.addEventListener('click', () => { SUN.showBuilding(id); SUN.windowView(id); });
+  window.__fmCardB = null; if (SUN) { try { SUN.showBuilding(id); } catch (e) { /* 강조 없음 */ } }
+}
+function pick(cx, cy) {
   if (window.__fmPointMode) return;      // 일조 '지점 선택' 모드: 클릭은 지점 평가에 쓰이고 카드는 열지 않는다
   ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
   const targets = [];
   if (S.layers.pins) targets.push(...pinMeshes);
   if (S.layers.bld) targets.push(...[...facadeMeshes, ...Object.values(bldMeshes)].filter((m) => m.visible));
-  targets.push(terrain, ...(typeof nbTargets === 'function' ? nbTargets() : []));
+  targets.push(terrain, ...(typeof nbTargets === 'function' ? nbTargets() : []), ...(typeof nbBld !== 'undefined' ? Object.values(nbBld).filter((m) => m.visible) : [])); /*allbld1*/
   const hits = ray.intersectObjects(targets, false); if (!hits.length) { closeCard(); hlGroup.clear(); return; }
   const h = hits[0], k = h.object.userData.kind;
   if (k === 'pin') {      // 핀 아이콘 자체(14px 안)를 눌렀을 때만 핀, 아니면 뒤에 있는 건물 우선
@@ -4125,6 +4155,13 @@ function nearestPath(x, y, tol) {
     if (Math.abs(nw.y) < 0.5) { const bb = bldFromHit(h), id = bb && bb[0]; if (id != null && SUN.windowViewAtWall(id, h.point.x, -h.point.z, h.point.y, nw.x, -nw.z)) { try { SUN.showBuilding(id); } catch (e) {} return; } }
   }
   if (k === 'bld') return showBuilding(bldFromHit(h));
+  if (k === 'nbld') {      /*allbld1: 이웃 동 건물도 같은 일조·창가 기능*/
+    const cb = ctxBldAt(h.point.x, -h.point.z, h.point.y);
+    if (cb) {
+      if (window.__fmWinClick && SUN && SUN.windowViewAtWall && h.face) { const nw = h.face.normal.clone().transformDirection(h.object.matrixWorld); if (Math.abs(nw.y) < 0.5 && SUN.windowViewAtWall(cb.id, h.point.x, -h.point.z, h.point.y, nw.x, -nw.z)) { try { SUN.showBuilding(cb.id); } catch (e) { /* */ } return; } }
+      return showCtxBuilding(cb);
+    }
+  }
   const x = h.point.x, y = -h.point.z, dist = camera.position.distanceTo(h.point);
   const pa = S.layers.flow ? nearestPath(x, y, Math.max(7, dist * 0.012)) : null;
   if (pa) return showStreet(pa);
