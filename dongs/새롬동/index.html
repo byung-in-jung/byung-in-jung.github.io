@@ -5230,7 +5230,7 @@ const VWO = (() => {
     } else { send({ t: 'cam', cam: ourCam() }); }      // 다시 켤 때: 새 카메라를 보내면 iframe 이 영상이 맞는지 다시 확인하고 'done' 을 다시 보낸다
     show(false, true);
   }
-  function loaded() { if (st.state !== 'loading') return; if (!st.moved && st.intent && S.mode !== 'walk') { Object.assign(V, st.intent); tween = null; try { send({ t: 'cam', cam: ourCam() }); } catch (e) { /* 곧 다시 보냄 */ } } /* 덮기 시작 뒤 사용자가 만지지 않았으면 켤 때의 시점을 그대로 유지 */ st.state = 'on'; st.wasDone = true; clearInterval(st.tm); label(); veil(false); show(true); showBar(true, true); say('브이월드가 위에 덮여 있어요. 끌어서 움직여 보세요.'); shStart(); }
+  function loaded() { if (st.state !== 'loading') return; if (window.__vwRevealGate && window.__vwRevealGate(loaded)) return; /*marksync1*/ if (!st.moved && st.intent && S.mode !== 'walk') { Object.assign(V, st.intent); tween = null; try { send({ t: 'cam', cam: ourCam() }); } catch (e) { /* 곧 다시 보냄 */ } } /* 덮기 시작 뒤 사용자가 만지지 않았으면 켤 때의 시점을 그대로 유지 */ st.state = 'on'; st.wasDone = true; clearInterval(st.tm); label(); veil(false); show(true); showBar(true, true); say('브이월드가 위에 덮여 있어요. 끌어서 움직여 보세요.'); shStart(); }
   function retry() { const was = st.tries; teardown(); st.tries = was; turnOn(true); }
   async function turnOff(silent) {
     const was = st.on; let sn = null;
@@ -5810,14 +5810,14 @@ function toast(m,ms){tt.textContent=m;tt.classList.add('on');clearTimeout(timer)
 function setState(s){if(s===cur)return;cur=s;tg.dataset.state=s;tg.querySelector('.vw-lb').textContent=LB[s];tg.setAttribute('aria-checked',(s==='on'||s==='loading')?'true':'false');tg.setAttribute('aria-busy',s==='loading'?'true':'false');tg.setAttribute('aria-disabled',(s==='auto'||s==='loading')?'true':'false')}
 function vwo(){return window.__vwo}
 function can(){var b=document.getElementById('bVw');return !!(b&&!b.classList.contains('dis')&&vwo())}
-function tick(){var v=vwo();if(!v||!v.st){return}if(autoOff){setState('auto');return}setState(v.st.on?(v.st.state==='on'?'on':'loading'):'off')}
+function tick(){var v=vwo();if(!v||!v.st){return}if(autoOff){setState('auto');return}setState(v.st.on?(v.st.state==='on'?'on':(window.__vwSlow?'off':'loading')):'off')}
 setInterval(tick,400);
 tg.addEventListener('click',function(){var v=vwo();if(!v||!can()){toast('이 주소에서는 브이월드를 켤 수 없어요');return}
  if(cur==='auto'){toast('일조 패널을 닫으면 다시 켜져요',2600);return}
  if(cur==='loading')return;
  if(cur==='on'){v.turnOff();toast('브이월드를 껐어요',1800)}else{v.turnOn();toast('브이월드 3D를 불러오는 중…',2000)}setTimeout(tick,60)});
 function ready(){var l=document.getElementById('loading');if(!l)return true;var c=getComputedStyle(l);return c.display==='none'||c.visibility==='hidden'||c.opacity==='0'||l.classList.contains('hide')}
-var pi=setInterval(function(){if(ready()){clearInterval(pi);try{parent.postMessage({type:"vw-ready"},"https://scity3d.blogspot.com")}catch(e){}}},300);var tried=false,iv=setInterval(function(){if(tried){clearInterval(iv);return}if(!can()||!ready())return;tried=true;clearInterval(iv);if(/[?&#]vw=0/.test(location.search+location.hash))return;setTimeout(function(){if(vwo().st&&!vwo().st.on)vwo().turnOn()},700)},400);
+var pi=setInterval(function(){if(ready()){clearInterval(pi);try{parent.postMessage({type:"vw-ready"},"https://scity3d.blogspot.com")}catch(e){}}},300);var tried=false,iv=setInterval(function(){if(tried){clearInterval(iv);return}if(!can()||!ready())return;tried=true;clearInterval(iv);if(/[?&#]vw=0/.test(location.search+location.hash))return;setTimeout(function(){if(vwo().st&&!vwo().st.on&&!(window.__vwNoAuto&&window.__vwNoAuto()))vwo().turnOn()},700)},400);
 function watchSun(){var p=document.getElementById('sun-panel');if(!p){setTimeout(watchSun,600);return}
  var last=!p.classList.contains('sun-hidden');
  new MutationObserver(function(){var open=!p.classList.contains('sun-hidden');if(open===last)return;last=open;var v=vwo();
@@ -6023,7 +6023,10 @@ html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-
 #wmLayer .wm-x{display:none;position:absolute;right:0;top:0;width:18px;height:18px;border-radius:50%;border:1px solid #fff;background:#222;color:#fff;font-size:10px;line-height:16px;text-align:center;cursor:pointer}
 #wmLayer .wm:hover .wm-x,#wmLayer .wm:focus-within .wm-x{display:block}
 #wmShow.on,#wmClear.on{background:var(--acc);color:var(--on-acc,#04202e);border-color:var(--acc)}
-#wmClear:disabled{opacity:.45}</style><script id="wmark1js">/* wmark1: 창가 시점을 '나가기'로 끝낼 때 보던 자리를 지도 위 작은 표식(핀+방향 화살표)으로 남긴다.
+#wmClear:disabled{opacity:.45}
+#wmLayer .wm-svg{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#wmLayer .wm-svg line{stroke:#f08a1c;stroke-width:1.5;stroke-dasharray:3 3}
+#wmLayer .wm-svg circle{fill:#f08a1c;stroke:#fff;stroke-width:1.5}</style><script id="wmark1js">/* wmark1: 창가 시점을 '나가기'로 끝낼 때 보던 자리를 지도 위 작은 표식(핀+방향 화살표)으로 남긴다.
    저장: localStorage 'fm-wm:<동>' (최대 12개, 오래된 것부터 교체), 켜기/끄기 'fm-wmon'. 표식 = 화면 고정 크기 DOM(터치 44px), 3D 위치를 매 렌더 뒤에 투영.
    본체 훅(앱 소스에 패치): window.__fmWmark.exit(w,yaw,pitch,fov) / window.__fmWinSet({yaw,pitch,fov}) / window.__fmWinCur. 이 파일은 declutter1 뒤 마지막에 주입. */
 (function () {
@@ -6034,7 +6037,7 @@ html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-
   var list = [], on = true, layer = null, sa = null, cam = null, rdr = null, THREE = null, tmp = null, clr = { arm: false, tm: 0 };
   function fin(v) { return typeof v === 'number' && isFinite(v); }
   function valid(r) { return r && fin(r.x) && fin(r.y) && fin(r.z) && fin(r.nx) && fin(r.ny) && fin(r.px) && fin(r.py) && fin(r.pz) && r.id != null && fin(r.yaw); }
-  function load() { try { var s = localStorage.getItem(KEY); if (s) { var a = JSON.parse(s); if (Array.isArray(a)) return a.filter(valid).slice(-MAX); } } catch (e) { /* 저장소 없음: 이번 방문 동안만 */ } return []; }
+  function load() { try { var s = localStorage.getItem(KEY); if (s) { var a = JSON.parse(s); if (Array.isArray(a)) return a.filter(valid).slice(-MAX).map(function (r) { r.px = r.x + r.nx * 0.3; r.pz = -(r.y + r.ny * 0.3); return r; }); } } catch (e) { /* 저장소 없음: 이번 방문 동안만 */ } return []; }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(list.map(function (r) { var c = {}; for (var k in r) if (k !== '__e') c[k] = r[k]; return c; }))); } catch (e) { /* 저장 실패해도 동작 */ } }
   try { on = localStorage.getItem(KON) !== '0'; } catch (e) { /* */ }
   function toast(m) { var t = d.getElementById('toast'); if (t) { t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2600); } }
@@ -6071,7 +6074,7 @@ html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-
   }
   function exit(w, yaw, pitch, fov) {
     if (!w || !w.pt || !fin(w.pt.x) || !fin(w.pt.y) || !fin(w.pt.nx) || !fin(w.pt.ny)) return;
-    var nx = w.pt.nx, ny = w.pt.ny, px = w.pt.x + nx * 1.2, pz = -(w.pt.y + ny * 1.2), py = fin(w.eyeZ) ? w.eyeZ : w.pt.z;
+    var nx = w.pt.nx, ny = w.pt.ny, px = w.pt.x + nx * 0.2, pz = -(w.pt.y + ny * 0.2), py = fin(w.eyeZ) ? w.eyeZ : w.pt.z;
     var r = { id: w.id, floor: w.floor, label: w.label, orient: w.orient, edge: w.edge, az: w.az, x: w.pt.x - nx * 0.1, y: w.pt.y - ny * 0.1, z: w.pt.z, nx: nx, ny: ny, yaw: yaw, pitch: pitch || 0, fov: fov || 0, px: px, py: py, pz: pz, t: Date.now() };
     if (!valid(r)) return;
     list = list.filter(function (o) { return !(o.id === r.id && o.floor === r.floor && Math.hypot(o.x - r.x, o.y - r.y) < 1.5); });
@@ -6080,6 +6083,25 @@ html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-
   }
   window.__fmWmark = { exit: exit, list: function () { return list.slice(); }, clear: function () { list = []; save(); build(); }, setOn: setOn, max: MAX, update: function () { upd(); } };
 
+  var occT = 0, occHit = false, occKey = '', meshes = null, meshT = 0, svg = null, ln = null, gd = null, rcast = null;
+  function pickMeshes() {      /* 가림 판정용 메시(건물·이웃 건물·지형) 목록: 3초마다 갱신 */
+    var now = performance.now(); if (meshes && now - meshT < 3000) return meshes; meshT = now; meshes = [];
+    try { sa.scene.traverse(function (o) { if (o.isMesh && o.visible && o.userData && (o.userData.kind === 'bld' || o.userData.kind === 'nbld' || o.userData.kind === 'terrain')) meshes.push(o); }); } catch (e) { /* */ }
+    return meshes;
+  }
+  function occluded(r) {      /* 우리 3D 에서만(위성은 브이월드 모델이라 판정 불가): 카메라->표식 광선이 먼저 건물·지형에 닿으면 가려짐. 200 ms 마다 */
+    var now = performance.now(), key = [r.t, Math.round(cam.position.x), Math.round(cam.position.y), Math.round(cam.position.z)].join(); if (now - occT < 200 && key === occKey) return occHit; occT = now; occKey = key;
+    try {
+      if (!rcast) rcast = new THREE.Raycaster(); var from = cam.position, to = new THREE.Vector3(r.px, r.py, r.pz), dir = to.clone().sub(from), dist = dir.length(); dir.normalize(); rcast.set(from, dir); rcast.far = Math.max(1, dist - 3);
+      var hits = rcast.intersectObjects(pickMeshes(), false); occHit = hits.length > 0;
+    } catch (e) { occHit = false; }
+    return occHit;
+  }
+  function stem(sx, sy, gx, gy, show, op) {      /* 표식에서 지면까지 가는 선 + 지면 점: 벽 어디에 붙었는지 보이게 */
+    if (!svg) { svg = d.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'wm-svg'); svg.setAttribute('aria-hidden', 'true'); ln = d.createElementNS('http://www.w3.org/2000/svg', 'line'); gd = d.createElementNS('http://www.w3.org/2000/svg', 'circle'); gd.setAttribute('r', '3'); svg.appendChild(ln); svg.appendChild(gd); layer.insertBefore(svg, layer.firstChild); }
+    svg.style.display = show ? '' : 'none'; if (!show) return;
+    ln.setAttribute('x1', sx.toFixed(1)); ln.setAttribute('y1', sy.toFixed(1)); ln.setAttribute('x2', gx.toFixed(1)); ln.setAttribute('y2', gy.toFixed(1)); gd.setAttribute('cx', gx.toFixed(1)); gd.setAttribute('cy', gy.toFixed(1)); svg.style.opacity = String(op);
+  }
   function upd() {
     if (!layer || !cam) return;
     var hide = !on || !list.length || d.body.classList.contains('fm-window');
@@ -6087,18 +6109,27 @@ html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-
     if (hide) { if (layer.style.display !== 'none') layer.style.display = 'none'; return; }
     if (layer.style.display === 'none') layer.style.display = '';
     var rc = rdr.domElement.getBoundingClientRect(), W = rc.width, H = rc.height; if (!W || !H) return;
+    var last = list.length - 1;      /* 화면에는 가장 최근 표식 1개만 */
     for (var i = 0; i < list.length; i++) {
       var r = list[i], e = r.__e; if (!e) continue;
+      if (i !== last) { if (e.style.display !== 'none') e.style.display = 'none'; continue; }
       tmp.set(r.px, r.py, r.pz).project(cam);
       var vis = tmp.z > -1 && tmp.z < 1 && Math.abs(tmp.x) < 1.15 && Math.abs(tmp.y) < 1.15;
-      if (!vis) { if (e.style.display !== 'none') e.style.display = 'none'; continue; }
+      /* 가시거리: 시점 거리(V.dist)에 비례한 한계(2배+300 m) 안쪽은 또렷, 한계에 가까워지면 흐려지고 넘으면 숨김 */
+      var dd = cam.position.distanceTo(new THREE.Vector3(r.px, r.py, r.pz)), V = sa.V, lim = 2 * ((V && isFinite(V.dist)) ? V.dist : 600) + 300, op = dd <= lim * 0.7 ? 1 : Math.max(0, (lim - dd) / (lim * 0.3));
+      if (!vis || op <= 0.02) { if (e.style.display !== 'none') e.style.display = 'none'; stem(0, 0, 0, 0, false, 0); continue; }
+      var vwOn = !!(window.__vwo && window.__vwo.st && window.__vwo.st.on), occ = !vwOn && occluded(r); if (occ) op *= 0.35;
       var sx = rc.left + (tmp.x * 0.5 + 0.5) * W, sy = rc.top + (-tmp.y * 0.5 + 0.5) * H;
       var az = -r.yaw;
       tmp.set(r.px + Math.sin(az) * 6, r.py, r.pz - Math.cos(az) * 6).project(cam);
       var dx = (rc.left + (tmp.x * 0.5 + 0.5) * W) - sx, dy = (rc.top + (-tmp.y * 0.5 + 0.5) * H) - sy, rot = Math.atan2(dx, -dy) * 180 / Math.PI;
       if (e.style.display === 'none') e.style.display = '';
-      e.style.transform = 'translate(' + (sx - 22).toFixed(1) + 'px,' + (sy - 22).toFixed(1) + 'px)';
+      e.style.transform = 'translate(' + (sx - 22).toFixed(1) + 'px,' + (sy - 22).toFixed(1) + 'px)'; e.style.opacity = String(op);
       var ic = e.firstChild; if (ic && isFinite(rot)) ic.style.transform = 'rotate(' + rot.toFixed(0) + 'deg)';
+      /* 지면까지 선(우리 지형 높이) */
+      var gy0 = 0; try { gy0 = sa.hAt(r.px, -r.pz); } catch (x) { gy0 = r.py - 15; }
+      tmp.set(r.px, gy0, r.pz).project(cam); var gsx = rc.left + (tmp.x * 0.5 + 0.5) * W, gsy = rc.top + (-tmp.y * 0.5 + 0.5) * H;
+      stem(sx, sy, gsx, gsy, tmp.z > -1 && tmp.z < 1, op * (occ ? 0.6 : 1));
     }
   }
 
@@ -6253,7 +6284,13 @@ body.hideall #vwChrome{display:none}
 #vfChip .vf-b{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:#2f3819;color:#fffaf0;font:inherit;cursor:pointer;white-space:nowrap}
 #vwpop .vf-opt{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px}
 body.fm-window #vfChip{display:none!important}
-@media (max-width:720px),(max-height:620px){#vfChip{top:62px;font-size:12px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
+@media (max-width:720px),(max-height:620px){#vfChip{top:62px;font-size:12px}}
+#vsChip{position:fixed;z-index:66;left:50%;top:70px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:6px 6px 6px 14px;border-radius:999px;background:rgba(255,250,240,.96);color:#2f3819;border:1px solid rgba(60,50,20,.2);box-shadow:0 4px 16px rgba(20,25,10,.28);font:600 13px/1.2 var(--font,"Malgun Gothic",system-ui,sans-serif)}
+#vsChip[hidden]{display:none}
+#vsChip .vf-b{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:#2f3819;color:#fffaf0;font:inherit;cursor:pointer;white-space:nowrap}
+#vwFrame{transition:opacity .4s ease}
+body.fm-window #vsChip{display:none!important}
+@media (max-width:720px),(max-height:620px){#vsChip{top:62px;font-size:12px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
    엔진(sun.js)은 그대로: SUN.state(min/doy/playing/paused/shadow), SUN.setTime/setDate, 패널 안 숨은 버튼(#sun-pd/#sun-pp/#sun-sh/#sun-now/[data-p])을 대리 조작한다.
    declutter1·wmark1 뒤 마지막에 주입. 큰 패널은 ⌄ 로만 연다. */
 (function () {
@@ -6514,7 +6551,7 @@ body.fm-window #vfChip{display:none!important}
       if (vwOn) { if (chip && chip.dataset.mode !== 'back') chip.hidden = true; }
       else {
         show('out');
-        if (!declined && !autoDid && lsG('fm-vw-auto') !== '0' && !lsG('fm-vw-slow') && o && performance.now() - outSince > 1000) { autoDid = true; o.turnOn(); }
+        if (!declined && !autoDid && lsG('fm-vw-auto') !== '0' && !((+lsG('fm-vw-slow') || 0) > Date.now()) && o && performance.now() - outSince > 1000) { autoDid = true; o.turnOn(); }
       }
     } else {
       outSince = 0; declined = false;
@@ -6526,5 +6563,50 @@ body.fm-window #vfChip{display:none!important}
     var l = d.createElement('label'); l.className = 'vf-opt'; l.innerHTML = '<input type="checkbox"> 범위 밖에서는 자동으로 위성 켜기'; var cb = l.querySelector('input'); cb.checked = lsG('fm-vw-auto') !== '0'; cb.addEventListener('change', function () { lsS('fm-vw-auto', cb.checked ? '1' : '0'); }); p.insertBefore(l, n);
   }
   setInterval(function () { try { tick(); opt(); } catch (e) { /* 아직 준비 전 */ } }, 300);
+})();
+
+/* vwsync1: 브이월드 첫 화면 = 켜기 직전 우리 화면. (a) 로딩 중 우리 지도를 움직이면 브이월드 카메라도 계속 따라간다. (b) 공개(reveal) 직전 두 카메라를 비교(위치 5 m·지면 높이 5 m·방위 1°·기울기 1°)해 넘으면 다시 맞춘 뒤 공개(최대 3회). (c) 느리면(25초, 폰/약한 기기 15초) 우리 지도 유지 + 칩, 준비되면 '켜기' 제안(자동 전환 없음). 24시간 기억(fm-vw-slow). */
+(function () {
+  if (window.__vs1) return; window.__vs1 = 1;
+  var d = document, passed = false, busy = false, slow = false, chip = null, chipMode = '', chipGo = null, lastKey = '', lastSend = 0, snapN = 9000000;
+  var LOG = window.__vwSyncLog = [];
+  function lsG(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsS(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* */ } }
+  function weak() { try { return matchMedia('(pointer:coarse)').matches && ((navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)); } catch (e) { return false; } }
+  function limit() { try { return (matchMedia('(pointer:coarse)').matches || weak()) ? 15000 : 25000; } catch (e) { return 25000; } }
+  window.__vwNoAuto = function () { return (+lsG('fm-vw-slow') || 0) > Date.now() || weak(); };
+  window.__vwSlow = false;
+  function send(m) { var o = window.__vwo; if (o && o.st && o.st.fr && o.st.fr.contentWindow) o.st.fr.contentWindow.postMessage(Object.assign({ vwo: 1 }, m), location.origin); }
+  function sendCam() { var o = window.__vwo; try { send({ t: 'cam', cam: o.ourCam() }); } catch (e) { /* 곧 다시 */ } }
+  function snapP() { return new Promise(function (res) { var id = ++snapN, tm = setTimeout(function () { window.removeEventListener('message', on); res(null); }, 1500); function on(e) { var m = e.data; if (m && m.vwo && m.t === 'snap' && m.id === id) { clearTimeout(tm); window.removeEventListener('message', on); res(m.snap); } } window.addEventListener('message', on); send({ t: 'get', id: id }); }); }
+  function cmp(sn, c) { var dx = (sn.lon - c.lon) * 89503, dy = (sn.lat - c.lat) * 110574, pos = Math.hypot(dx, dy), da = Math.abs((sn.agl == null ? c.agl : sn.agl) - c.agl), dh = Math.abs(((sn.heading - c.heading + 540) % 360) - 180), dp = Math.abs(sn.pitch - c.pitch); return { pos: +pos.toFixed(2), agl: +da.toFixed(2), head: +dh.toFixed(2), pitch: +dp.toFixed(2), ok: pos <= 5 && da <= 5 && dh <= 1 && dp <= 1, t: Math.round(performance.now()) }; }
+  function mk() { if (chip) return chip; chip = d.createElement('div'); chip.id = 'vsChip'; chip.setAttribute('role', 'status'); chip.hidden = true; chip.innerHTML = '<span class="vf-t"></span><button type="button" class="vf-b"></button>'; d.body.appendChild(chip); chip.querySelector('.vf-b').addEventListener('click', function () { var m = chipMode; hide(); if (m === 'slow') { slow = false; window.__vwSlow = false; } else if (m === 'ready') { slow = false; window.__vwSlow = false; var g = chipGo; chipGo = null; if (g) g(); } }); return chip; }
+  function show(mode) { mk(); chipMode = mode; chip.querySelector('.vf-t').textContent = mode === 'ready' ? '브이월드 준비됐어요' : '브이월드가 느려 우리 지도로 보여드려요'; chip.querySelector('.vf-b').textContent = mode === 'ready' ? '켜기' : '다시 켜기'; chip.hidden = false; }
+  function hide() { if (chip) chip.hidden = true; chipMode = ''; }
+  window.__vwRevealGate = function (go) {
+    if (passed) { passed = false; return false; }
+    if (busy) return true; var o = window.__vwo; if (!o || !o.st) return false; busy = true;
+    (async function () {
+      try {
+        if (slow) { show('ready'); await new Promise(function (res) { chipGo = res; }); }
+        for (var i = 0; i < 3; i++) {
+          var sn = await snapP(); if (!sn) break; var c = cmp(sn, o.ourCam()); LOG.push(c); if (c.ok || !isFinite(c.head) || !isFinite(c.pitch)) break;
+          sendCam(); await new Promise(function (r) { setTimeout(r, 600); });
+        }
+      } catch (e) { /* 공개는 계속 */ }
+      busy = false; passed = true; go();
+    })();
+    return true;
+  };
+  setInterval(function () {
+    try {
+      var o = window.__vwo, sa = window.__sa; if (!o || !o.st || !sa) return;
+      if (!o.st.on || o.st.state !== 'loading') { if (!o.st.on) { slow = false; window.__vwSlow = false; } return; }
+      if (!slow && !busy && o.st.t0 && performance.now() - o.st.t0 > limit()) { slow = true; window.__vwSlow = true; lsS('fm-vw-slow', String(Date.now() + 86400000)); show('slow'); setTimeout(function () { if (chipMode === 'slow') hide(); }, 8000); }
+      if (!o.st.ready || !o.st.fr) return;
+      var V = sa.V, W = sa.WK, walk = sa.S && sa.S.mode === 'walk', key = walk ? [W.x, W.y, W.yaw, W.pitch, W.zAbs].join() : [V.tx, V.ty, V.tz, V.yaw, V.pitch, V.dist].join();
+      if (key !== lastKey && performance.now() - lastSend > 100) { lastKey = key; lastSend = performance.now(); sendCam(); }
+    } catch (e) { /* 아직 준비 전 */ }
+  }, 120);
 })();</script><!--/daystrip1--></body>
 </html>
