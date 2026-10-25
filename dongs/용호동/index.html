@@ -1514,7 +1514,7 @@ html[data-theme="light"][data-adv="1"] #topbar{background:rgba(255,255,255,.98);
     if (root.FMDrag) { root.FMDrag.attach(panel, panel.querySelector('.sun-hd'), 'sunpanel', { sheet: true }); root.FMDrag.attach(clock, clock, 'sunclock', { onClick: openFromClock }); }
     new MutationObserver(() => updateClock()).observe(document.body, { attributes: true, attributeFilter: ['class'] });
     if (!o.setBuildingTint) { const bl = panel.querySelector('#sun-bc'); const lab = bl && bl.closest('label'); if (lab) lab.style.display = 'none'; }
-    function showHide() { if (S.open && !S.shInit) { S.shInit = true; try { if (!S.shadow) setShadow(true); } catch (e) { /* no GL shadow support: leave it off */ } } panel.classList.toggle('sun-hidden', !S.open); if (ownLaunch) launch.classList.toggle('sun-hidden', S.open); if (o.launchButton) o.launchButton.classList.toggle('on', S.open); if (o.onOpenChange) o.onOpenChange(S.open); panel.classList.toggle('sun-folded', S.folded); document.body.classList.toggle('fm-sun-open', !!S.open); updateClock(); save(); }
+    function showHide() { /*declutter1: 패널을 처음 열어도 그림자를 자동으로 켜지 않는다*/ panel.classList.toggle('sun-hidden', !S.open); if (ownLaunch) launch.classList.toggle('sun-hidden', S.open); if (o.launchButton) o.launchButton.classList.toggle('on', S.open); if (o.onOpenChange) o.onOpenChange(S.open); panel.classList.toggle('sun-folded', S.folded); document.body.classList.toggle('fm-sun-open', !!S.open); updateClock(); save(); }
     launch.onclick = () => { S.open = true; showHide(); };
     panel.addEventListener('click', (e) => { const a = e.target.dataset && e.target.dataset.a; if (a === 'close') { S.open = false; showHide(); } else if (a === 'fold') { S.folded = !S.folded; showHide(); } });
     panel.addEventListener('keydown', (e) => e.stopPropagation());   // host WASD / H keys must not fire while typing/sliding
@@ -2897,7 +2897,7 @@ ${sBars(Object.assign({ noDir }, A))}`;
       const Q = Qf(); if (!Q || !w || w.idx == null) return; ensure();
       if (!W) W = create(Q, { cover: getCover() });
       const wasNew = !cur; cur = { id: w.id, idx: w.idx, floor: w.floor, floors: w.floors, fh: w.floorH || 2.8, az: w.az, edge: w.edge, edgeAz: w.edgeAz, x: w.pt.x, y: w.pt.y, z: w.eyeZ };
-      if (wasNew) { closed = false; if (matchMedia && matchMedia('(max-width:720px),(max-height:620px)').matches) { card.classList.add('wv-min'); card.querySelector('.wv-m').textContent = '▴'; } setFov(fov); card.querySelector('.wv-frame').checked = frameOn; }
+      if (wasNew) { closed = false; { card.classList.add('wv-min'); card.querySelector('.wv-m').textContent = '▴'; /*declutter1: 창가 카드는 접힌 채 시작*/ } setFov(fov); card.querySelector('.wv-frame').checked = frameOn; }
       const s = W.sector({ x: cur.x, y: cur.y, z: cur.z, az: cur.az, own: cur.idx, fh: cur.fh, floor: cur.floor, clipAz: cur.edgeAz });
       const fl = W.compareFloors(cur.floors); if (fl.indexOf(cur.floor) < 0) { fl.push(cur.floor); fl.sort((a, b) => a - b); }
       const rows = W.compare({ idx: cur.idx, edge: cur.edge, x: cur.x, y: cur.y, az: cur.az, fh: cur.fh, floors: fl, clipAz: cur.edgeAz });
@@ -3061,7 +3061,7 @@ ${sBars(Object.assign({ noDir }, A))}`;
   var park = /[?&#]advanced(=1|&|$)/.test(q0), adv0 = park;   // UX R1: first screen is the same in every dong -> 'fm-adv' (더 보기) is no longer remembered
   document.documentElement.dataset.adv = adv0 ? '1' : '0'; document.documentElement.dataset.park = park ? '1' : '0';
   // FMAdv: tiny shared state between this layer and the viewer apps. flow = 생활동선(길 색·입자) shown; default OFF, choice remembered ('fm-flow'; ?flow=1 forces on).
-  var FA = window.FMAdv = { adv: adv0, flow: lsG('fm-flow') === '1' || /[?&#]flow=1/.test(q0), has: true, label: '', setAdv: null, report: null };
+  var FA = window.FMAdv = { adv: adv0, flow: /[?&#]flow=1/.test(q0) /*declutter1: 동선은 기본 꺼짐(옛 fm-flow 저장값 무시)*/, has: true, label: '', setAdv: null, report: null };
   var d = document, b = d.body, $ = function (i) { return d.getElementById(i); };
   function mk(tag, id, cls, html) { var e = d.createElement(tag); if (id) e.id = id; if (cls) e.className = cls; e.innerHTML = html; return e; }
   var bar = mk('div', 'fmFab', '', '<button type="button" class="btn" id="fmPanels" aria-expanded="false" aria-controls="cols"><span aria-hidden="true">☰</span> 패널</button>');
@@ -3122,8 +3122,8 @@ ${sBars(Object.assign({ noDir }, A))}`;
   var sunBtn = $('bSun'), dayBtn = coreEls.fmDayCore, winBtn = $('bWinClick'), winCore = coreEls.fmWindowCore, flowBtn = $('bPart'), flowCore = coreEls.fmFlowCore;
   function sunApi() { return window.__sa && window.__sa.SUN && window.__sa.SUN(); }
   function openSun() { if (b.classList.contains('hideall')) { var h = $('bHide'); if (h) h.click(); } var s = sunApi(); if (s && s.open) s.open(); else if (sunBtn) sunBtn.click(); }
-  if (coreEls.fmSunCore) coreEls.fmSunCore.addEventListener('click', openSun);
-  if (dayBtn) dayBtn.addEventListener('click', function () { openSun(); setTimeout(function () { var p = $('sun-pd'); if (p) p.click(); }, 0); });
+  if (coreEls.fmSunCore) coreEls.fmSunCore.addEventListener('click', function () { var pn = $('sun-panel'); if (pn && !pn.classList.contains('sun-hidden') && sunBtn) sunBtn.click(); else openSun(); /*declutter1: 다시 누르면 닫힘*/ });
+  if (dayBtn) dayBtn.addEventListener('click', function () { /*declutter1: 패널을 열지 않고 재생만*/ var p = $('sun-pd'), sh = $('sun-sh'); if (!p) { openSun(); return; } if (sh && !sh.checked && !/^■/.test(p.textContent.trim())) sh.click(); p.click(); });
   if (winCore && winBtn) winCore.addEventListener('click', function () { winBtn.click(); });
   function setSimpleFlow(on) {
     var api = window.__sa && window.__sa.S ? window.__sa : (window.__hb && window.__hb.S ? window.__hb : null);
@@ -3151,7 +3151,7 @@ ${sBars(Object.assign({ noDir }, A))}`;
   syncCore();
   // the apps report whether 생활동선 data exists / is drawn, so the status is always visible inside 고급
   FA.report = function (has, on) {
-    var k = (has ? 1 : 0) + ':' + (on ? 1 : 0); if (FA._k === k) return; FA._k = k; FA.flow = !!on; if (has) lsS('fm-flow', on ? '1' : '0');
+    var k = (has ? 1 : 0) + ':' + (on ? 1 : 0); if (FA._k === k) return; FA._k = k; FA.flow = !!on; if (has) lsS('fm-flow2', on ? '1' : '0');
     b.classList.toggle('fm-flow-on', !!(has && on)); b.classList.toggle('fm-flow-has', !!has);
     var c = $('advFlowChip'); if (c) { c.className = 'adv-chip' + (has ? (on ? ' on' : '') : ' none'); c.textContent = has ? (on ? '생활동선: 켜짐' : '생활동선: 꺼짐 (‘사람 흐름 켜기’ 버튼으로 켜요)') : '이 지역은 생활동선 자료가 없어요'; }
     if (flowCore) { flowCore.hidden = !has; syncCore(); }
@@ -5214,7 +5214,7 @@ function sunInit() {
   // 생활동선 × 일조(docs/SUN.md): 길 카드·TOP 목록의 '이 길의 일조' + 상위 20 % 생활동선 위 해/그늘 표식(기본 꺼짐). 흐름 인코딩은 건드리지 않는다.
   if (window.LifeSun) LIFE = LifeSun.init({ THREE, scene, sun: SUN, paths: () => paths, active: (pa) => EDONG[pa.ei] === ACT, value: (pa) => edgeVal(pa.ei, 0, 3), weight: sideW, hour: () => S.hour, topEl, corridors: () => D.corridors, requestRender: () => {}, dongKey: () => ACT });
   $('bSun').setAttribute('aria-controls', 'sun-panel');
-  if (/[#&]sun(=|&|$)/.test(location.hash)) { SUN.open(); if (/shadow=1/.test(location.hash)) SUN.setShadow(true); }
+  if (/[#&]sun(=|&|$)/.test(location.hash)) { if (!/[#&]ext=1/.test(location.hash)) SUN.open(); if (/shadow=1/.test(location.hash)) SUN.setShadow(true); }
 }
 
 // ------------------------------------------------------------------ 브이월드로 덮어 보기 (개인 시험용, docs/VWORLD-OVERLAY.md)
@@ -5898,5 +5898,155 @@ html.fm-ext[data-adv="1"] #topbar{top:46px}
 html.fm-ext:not([data-adv="1"]) #topbar>.fm-core::after,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind::after,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv::before{inset:-5px}
 html.fm-ext:not([data-adv="1"]) #topbar>.fm-core,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv{border-color:rgba(60,50,20,.32)}
 }</style><!--/phonefix2--><style id="vwshadow1">#vwCapRow{max-width:100%}#vwCapChip{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}#vwCapNote{font-size:11.5px;line-height:1.4}
-@media (max-width:720px){#vwCapChip{min-height:36px!important;padding:0 10px}#vwCapNote{display:none}}</style></body>
+@media (max-width:720px){#vwCapChip{min-height:36px!important;padding:0 10px}#vwCapNote{display:none}}</style><!--declutter1--><style id="declutter1">/* declutter1: 가는 도크 · 약식 일조 패널 · 미니 카드 (디자이너 검토 design-review-declutter.md + 사용자 방향)
+   반드시 </body> 직전, vwshadow1 뒤(마지막)에 둔다. public-simple-ui / phonefix / ext top 규칙을 덮는다. */
+
+/* ---------- 1. 상단 가는 도크 (36px) ---------- */
+html:not([data-adv="1"]) #topbar{top:10px!important;bottom:auto;left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 20px);height:36px;box-sizing:border-box;padding:3px;gap:3px;flex-wrap:nowrap;overflow:visible;align-items:center;justify-content:flex-start;border-radius:999px;background:rgba(255,250,240,.94);border:1px solid rgba(60,50,20,.14);box-shadow:0 2px 10px rgba(30,40,15,.18);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+html:not([data-adv="1"]) #topbar>.fm-core,html:not([data-adv="1"]) #topbar>#bAdv,html:not([data-adv="1"]) #topbar>#aList,html:not([data-adv="1"]) #topbar>#fmFind{position:relative;box-sizing:border-box;flex:0 0 auto!important;width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important;padding:0!important;margin:0!important;font-size:0!important;line-height:1;border-radius:50%;background:transparent;border:0;box-shadow:none;color:#2b2a1e;display:inline-flex;align-items:center;justify-content:center;overflow:visible;text-decoration:none}
+html:not([data-adv="1"]) #topbar>.fm-core:hover,html:not([data-adv="1"]) #topbar>#bAdv:hover,html:not([data-adv="1"]) #topbar>#aList:hover{background:rgba(60,50,20,.1)}
+html:not([data-adv="1"]) #topbar>.fm-core::before,html:not([data-adv="1"]) #topbar>#bAdv::before,html:not([data-adv="1"]) #topbar>#aList::before{font:600 15px/1 "Segoe UI Symbol","Noto Sans Symbols 2","Apple Symbols","Malgun Gothic",sans-serif;white-space:nowrap;position:static}
+html:not([data-adv="1"]) #topbar>.fm-core::after,html:not([data-adv="1"]) #topbar>#bAdv::after,html:not([data-adv="1"]) #topbar>#aList::after,html:not([data-adv="1"]) #topbar>#fmFind::after{content:""!important;position:absolute;inset:-7px -2px;font-size:0;border:0;background:none}
+html:not([data-adv="1"]) #fmSunCore::before{content:"\2600\FE0E"}
+html:not([data-adv="1"]) #fmDayCore::before{content:"\25B6\FE0E"}
+html:not([data-adv="1"]) #fmWindowCore::before{content:"\25A3\FE0E"}
+html:not([data-adv="1"]) #fmFlowCore::before{content:"\2197\FE0E"}
+html:not([data-adv="1"]) #topbar>#bAdv::before{content:"\22EF"}
+html:not([data-adv="1"]) #topbar>#aList::before{content:"\2190"}
+/* 라벨은 켜진 버튼에만 */
+html:not([data-adv="1"]) #topbar>.fm-core.on{width:auto!important;padding:0 10px 0 8px!important;border-radius:999px;background:#2f3819!important;color:#fffaf0!important}
+html:not([data-adv="1"]) #topbar>.fm-core.on::before{font-size:13px}
+html:not([data-adv="1"]) #fmSunCore.on::before{content:"\2600\FE0E  \C77C\C870"}
+html:not([data-adv="1"]) #fmDayCore.on::before{content:"\25A0  \C815\C9C0"}
+html:not([data-adv="1"]) #fmWindowCore.on::before{content:"\25A3\FE0E  \CC3D\AC00"}
+html:not([data-adv="1"]) #fmFlowCore.on::before{content:"\2197\FE0E  \B3D9\C120"}
+html:not([data-adv="1"]) #topbar>.fm-core:focus-visible,html:not([data-adv="1"]) #topbar>#bAdv:focus-visible,html:not([data-adv="1"]) #topbar>#aList:focus-visible,html:not([data-adv="1"]) #topbar>#fmFind:focus-visible{outline:2px solid var(--acc,#56632d);outline-offset:2px}
+/* 블로그 임베드: 전국 지도 버튼은 숨김 */
+html.fm-ext:not([data-adv="1"]) #topbar>#aList{display:none!important}
+@media (pointer:coarse){html:not([data-adv="1"]) #topbar>.fm-core,html:not([data-adv="1"]) #topbar>#bAdv,html:not([data-adv="1"]) #topbar>#aList{width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important}html:not([data-adv="1"]) #topbar{height:40px}}
+
+/* 브이월드 스위치(단독 뷰어) 축소 */
+.vw-tg{height:30px!important;padding:0 10px 0 5px!important;gap:6px!important;font-size:12px!important;top:10px!important;box-shadow:0 2px 8px rgba(30,40,15,.18)!important}
+.vw-sw{width:30px!important;height:18px!important;border-radius:9px!important}
+.vw-sw i{width:14px!important;height:14px!important}
+.vw-tg[data-state="on"] .vw-sw i,.vw-tg[data-state="loading"] .vw-sw i{transform:translateX(12px)!important}
+@media (max-width:1039px){.vw-tg{left:10px!important}}
+
+/* ---------- 2. 폰: 하단 우측 원형 도크 하나로 통합 ---------- */
+@media (max-width:720px),(max-height:620px){
+html:not([data-adv="1"]) #topbar{top:auto!important;bottom:calc(var(--fh,26px) + env(safe-area-inset-bottom) + 10px);left:8px;right:8px;transform:none;width:auto;max-width:none;height:auto;padding:0;gap:8px;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:0;justify-content:flex-end;pointer-events:none}
+html:not([data-adv="1"]) #topbar>*{pointer-events:auto}
+html:not([data-adv="1"]) #topbar>.fm-core,html:not([data-adv="1"]) #topbar>#bAdv,html:not([data-adv="1"]) #topbar>#aList,html:not([data-adv="1"]) #topbar>#fmFind{width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;background:rgba(255,250,240,.94);border:1px solid rgba(60,50,20,.3);box-shadow:0 2px 8px rgba(20,25,10,.2)}
+html:not([data-adv="1"]) #topbar>#fmFind{display:inline-flex!important}
+html:not([data-adv="1"]) #topbar>.fm-core::after,html:not([data-adv="1"]) #topbar>#bAdv::after,html:not([data-adv="1"]) #topbar>#aList::after,html:not([data-adv="1"]) #topbar>#fmFind::after{inset:-4px}
+html:not([data-adv="1"]) #topbar>.fm-core.on{width:auto!important;padding:0 12px 0 10px!important;border:1px solid #2f3819}
+.vw-tg{left:10px!important;top:10px!important}
+}
+
+/* ---------- 3. 일조 패널: 약식(compact) ---------- */
+html:not([data-adv="1"]) #sun-panel{--sun-w:280px;width:280px!important;top:56px!important;right:10px!important;left:auto;bottom:auto;max-height:min(56vh,420px)!important;border-radius:12px;overscroll-behavior:contain;font-size:13px}
+html:not([data-adv="1"]) #sun-panel.dc-more{width:340px!important;max-height:min(70vh,640px)!important}
+html:not([data-adv="1"]) #sun-panel .sun-hd{min-height:36px}
+#sun-panel .sun-x{min-width:36px;min-height:36px}
+#sun-panel button.sun-b{min-height:32px;padding:3px 10px}
+@media (pointer:coarse){#sun-panel button.sun-b{min-height:40px}}
+#sun-panel:not(.dc-more) .sun-bd>*:not(.dc-keep){display:none!important}
+#sun-panel:not(.dc-more) .sun-bd>.dc-keep .sun-times,#sun-panel:not(.dc-more) #sun-marks,#sun-panel:not(.dc-more) #sun-tbar,#sun-panel:not(.dc-more) #sun-py,#sun-panel:not(.dc-more) #sun-pr,#sun-panel:not(.dc-more) #sun-kst,#sun-panel:not(.dc-more) .sun-dates+.sun-mut{display:none!important}
+#sun-panel:not(.dc-more) .sun-bd{padding:6px 10px 8px}
+#sun-panel:not(.dc-more) .sun-row{margin:4px 0}
+#sun-panel:not(.dc-more) .sun-dates{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+#sun-panel:not(.dc-more) .sun-dates .sun-b{padding:3px 2px;font-size:12px;white-space:nowrap;min-width:0}
+#sun-panel:not(.dc-more) #sun-t{height:20px;margin:0}
+#sun-panel:not(.dc-more) .sun-playgrid{display:flex;gap:6px}
+#sun-panel:not(.dc-more) #sun-read{font-size:12px;line-height:1.35;margin:4px 0}
+#sun-panel:not(.dc-more) #sun-read br{display:none}
+#sun-panel:not(.dc-more) .sun-sw{margin:2px 0}
+#sun-panel .dc-morebtn{display:block;width:100%;margin-top:4px;text-align:center;font-size:12px}
+#sun-panel #sun-qpanel{position:static!important;width:auto!important;max-height:none!important;box-shadow:none;border:0;border-top:1px dashed var(--line2,#c9d1d9);border-radius:0;background:transparent;margin-top:6px;display:block}
+#sun-panel #sun-qpanel.sun-hidden{display:none!important}
+#sun-panel #sun-qpanel>.sun-hd{min-height:28px}
+#sun-panel #sun-qpanel .sun-bd{padding:6px 0 0}
+#sun-qpanel:not(.dc-in){display:none!important}
+
+/* 시계 칩: 패널이 닫힌 채 그림자/재생 중일 때만 작게 */
+html:not([data-adv="1"]) #sun-clock:not(.sun-hidden){display:block!important;top:10px!important;right:10px!important;min-width:0;padding:3px 40px 3px 10px;border-radius:999px;box-shadow:0 2px 10px rgba(30,40,15,.18)}
+#sun-clock .sun-ck-d,#sun-clock .sun-ck-sub{display:none!important}
+#sun-clock .sun-ck-b{width:28px;height:28px;right:3px;top:50%;margin-top:-14px;font-size:12px}
+@media (max-width:720px) and (orientation:portrait){
+html:not([data-adv="1"]) #sun-panel,html:not([data-adv="1"]) #sun-panel.dc-more{left:8px!important;right:8px!important;width:auto!important;top:auto!important;bottom:calc(var(--fh,26px) + 62px)!important;max-height:min(40vh,300px)!important}
+}
+@media (max-height:620px) and (orientation:landscape){
+html:not([data-adv="1"]) #sun-panel,html:not([data-adv="1"]) #sun-panel.dc-more{width:min(300px,46vw)!important;top:8px!important;right:8px!important;max-height:calc(100vh - var(--fh,26px) - 64px)!important}
+}
+
+/* ---------- 4. 카드: 미니 ---------- */
+html:not([data-adv="1"]) #card{width:min(320px,calc(100vw - 24px))!important;max-width:none!important;max-height:min(34vh,260px)!important;left:10px!important;right:auto!important;bottom:calc(var(--fh,36px) + 10px)!important;padding:8px 12px!important;border-radius:12px!important;box-shadow:0 2px 10px rgba(30,40,15,.2);animation:none}
+html:not([data-adv="1"]) #card.dc-big{max-height:min(60vh,520px)!important}
+html:not([data-adv="1"]) #card h2,html:not([data-adv="1"]) #card h3{font-size:15px;margin:0 30px 2px 0}
+html:not([data-adv="1"]) #card .x{width:32px!important;height:32px!important}
+html:not([data-adv="1"]) #card .chip{min-height:32px}
+#wvCard{width:min(300px,calc(100vw - 24px))!important}
+@media (max-width:720px) and (orientation:portrait){
+html:not([data-adv="1"]) #card,html:not([data-adv="1"]) body.fm-sun-open #card{left:8px!important;right:8px!important;width:auto!important;bottom:calc(var(--fh,26px) + 62px)!important;max-height:min(34svh,240px)!important}
+html:not([data-adv="1"]) body.fm-sun-open:not(.dc-folded) #card{display:none!important}
+html:not([data-adv="1"]) #card.dc-big{max-height:min(34svh,240px)!important}
+#wvCard{left:8px;right:8px;width:auto!important;bottom:calc(var(--fh,26px) + 62px)!important}
+}
+@media (max-height:620px) and (orientation:landscape){
+html:not([data-adv="1"]) #card,html:not([data-adv="1"]) body.fm-sun-open #card{width:min(360px,46vw)!important;left:8px!important;right:auto!important;bottom:calc(var(--fh,26px) + 8px)!important;max-height:min(46svh,150px)!important}
+html:not([data-adv="1"]) #card.dc-big{max-height:min(46svh,150px)!important}
+#wvCard{width:min(300px,46vw)!important;bottom:calc(var(--fh,26px) + 8px)!important}
+}
+/* (보정) 약식 패널: 날짜 칩 4개 한 줄, 체크 줄 높이 */
+#sun-panel:not(.dc-more) .sun-dates .sun-b:not([data-p]){display:none!important}
+#sun-panel:not(.dc-more) .sun-sw{min-height:28px!important;padding:0!important;display:flex;align-items:center;gap:6px}
+#sun-panel:not(.dc-more) .sun-l{margin-bottom:2px}
+html:not([data-adv="1"]) #sun-panel .sun-hd{padding:3px 6px 3px 12px!important;min-height:0!important}
+html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-height:30px!important;width:30px;height:30px;padding:0}
+#sun-panel:not(.dc-more) button.sun-b{min-height:28px;padding:2px 8px}
+#sun-panel:not(.dc-more) .sun-bd>.dc-keep{margin-top:2px;margin-bottom:2px}
+#sun-panel:not(.dc-more) #sun-read{min-height:0;padding:0}</style><script id="declutter1js">/* declutter1 JS: 약식 일조 패널 '더 보기' · 지도 탭 접힘 · 카드 확장 토글 · qpanel 합치기. 어떤 것도 패널을 자동으로 열지 않는다. */
+(function(){
+  if(window.__dc1)return;window.__dc1=1;
+  var d=document,de=d.documentElement;de.classList.add('dc1');
+  var phone=function(){return matchMedia('(max-width:720px),(max-height:620px)').matches};
+  function setup(){
+    var p=d.getElementById('sun-panel'),qp=d.getElementById('sun-qpanel');
+    if(!p||!qp||p.__dc)return !!p&&!!qp&&!!p.__dc;
+    var bd=p.querySelector('.sun-bd');if(!bd)return false;p.__dc=1;
+    function keep(el){var n=el;while(n&&n.parentNode!==bd)n=n.parentNode;if(n)n.classList.add('dc-keep');return n}
+    ['sun-dl','sun-tl','sun-pd','sun-read','sun-sh'].forEach(function(id){var e=d.getElementById(id);if(e)keep(e)});
+    var shl=keep(d.getElementById('sun-sh'));
+    var mb=d.createElement('button');mb.type='button';mb.className='sun-b dc-morebtn dc-keep';mb.setAttribute('aria-expanded','false');mb.textContent='더 보기 ▾';
+    mb.title='세밀 조정·일 년 보기·건물 누르기·고급 항목';
+    if(shl&&shl.nextSibling)bd.insertBefore(mb,shl.nextSibling);else bd.appendChild(mb);
+    function more(on){p.classList.toggle('dc-more',!!on);mb.setAttribute('aria-expanded',on?'true':'false');mb.textContent=on?'간단히 ▴':'더 보기 ▾'}
+    mb.addEventListener('click',function(){more(!p.classList.contains('dc-more'))});
+    /* qpanel(시간대별 결과)을 일조 패널 안으로 합친다 */
+    bd.appendChild(qp);qp.classList.add('dc-in');
+    new MutationObserver(function(){if(!qp.classList.contains('sun-hidden'))more(true)}).observe(qp,{attributes:true,attributeFilter:['class']});
+    /* 열릴 때마다 약식으로 시작 / 접힘 상태를 body 에 반영 */
+    var wasHidden=p.classList.contains('sun-hidden');
+    new MutationObserver(function(){var h=p.classList.contains('sun-hidden');
+      if(wasHidden&&!h&&qp.classList.contains('sun-hidden'))more(false);
+      wasHidden=h;d.body.classList.toggle('dc-folded',p.classList.contains('sun-folded'));
+    }).observe(p,{attributes:true,attributeFilter:['class']});
+    /* 지도 빈 곳(캔버스) 짧은 탭 → 약식일 때 접힘 */
+    var sx=0,sy=0,st=0;
+    d.addEventListener('pointerdown',function(e){sx=e.clientX;sy=e.clientY;st=Date.now()},true);
+    d.addEventListener('pointerup',function(e){
+      var t=e.target;if(!t||t.tagName!=='CANVAS'||!t.parentNode||t.parentNode.id!=='stage')return;
+      if(Math.abs(e.clientX-sx)>6||Math.abs(e.clientY-sy)>6||Date.now()-st>500)return;
+      if(p.classList.contains('sun-hidden')||p.classList.contains('sun-folded')||p.classList.contains('dc-more'))return;
+      var f=p.querySelector('[data-a="fold"]');if(f)f.click();
+    },true);
+    return true;
+  }
+  var n=0,iv=setInterval(function(){if(setup()||++n>300)clearInterval(iv)},200);
+  /* 건물 카드: 자세히(details.bcMore)를 열 때만 커진다 */
+  d.addEventListener('toggle',function(e){var t=e.target;if(!t||!t.matches||!t.matches('#card details.bcMore'))return;var c=d.getElementById('card');if(c)c.classList.toggle('dc-big',!!c.querySelector('details.bcMore[open]'))},true);
+  /* 새 카드가 열릴 때는 항상 미니로 */
+  var cd=d.getElementById('card');
+  if(cd)new MutationObserver(function(){if(cd.style.display==='none')cd.classList.remove('dc-big')}).observe(cd,{attributes:true,attributeFilter:['style']});
+})();</script><!--/declutter1--></body>
 </html>
