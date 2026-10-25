@@ -202,6 +202,29 @@ function drawShadow(m) {
   }
   return cv;
 }
+/*smooth1*/ // ---- 매끄러운 교체: 지면 그림자 + 3D 표면 그림자를 한 묶음(ep)으로 뒤에서 준비해 한 프레임에 함께 바꾼다(그림자 없는 프레임 0, 겹침 0)
+const PS = new Map(); let LASTEP = -1;
+function dropSlot(sl) { clearTimeout(sl.tm); if (sl.v && sl.v.np) { try { V.scene.primitives.remove(sl.v.np); } catch (e) { /* 무시 */ } } }
+function stage(ep, k, val) {
+  if (ep <= LASTEP) { if (k === 'v' && val.np) { try { V.scene.primitives.remove(val.np); } catch (e) { /* 무시 */ } } return; }      // 이미 더 새 묶음이 그려졌다
+  let sl = PS.get(ep); if (!sl) { sl = { ep, g: undefined, v: undefined, tm: 0 }; sl.tm = setTimeout(() => commitSlot(sl), 800); PS.set(ep, sl); }
+  sl[k] = val; if (sl.g !== undefined && sl.v !== undefined) commitSlot(sl);
+}
+function commitSlot(sl) {
+  clearTimeout(sl.tm); if (!PS.has(sl.ep)) return; PS.delete(sl.ep);
+  if (sl.ep <= LASTEP) { dropSlot(sl); return; } LASTEP = sl.ep;
+  for (const [e, o] of PS) if (e < sl.ep) { dropSlot(o); PS.delete(e); }
+  if (sl.g !== undefined) applyG(sl.g); if (sl.v !== undefined) applyV(sl.v);
+  try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ }
+}
+function applyV(v) {
+  if (v.hide) { shvHide(); return; }
+  const np = v.np, old = SHV.prim; try { const at = np.getGeometryInstanceAttributes('shv'); if (at) at.color = Cesium.ColorGeometryInstanceAttribute.toValue(shvColor(SHV.alpha)); } catch (e) { /* 곧 다시 */ }
+  SHV.prim = np; SHV.shown = true;
+  if (old && old !== np) { old.show = false; let k = 0; const rm = V.scene.postRender.addEventListener(() => { if (++k >= 2) { try { rm(); V.scene.primitives.remove(old); } catch (e) { /* 무시 */ } } }); try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ } }
+}
+async function applyG(g) { if (g.hide) shHide(); else if (SHD.mode === 'prim') showPrim(g.cv, g.rect); else await showImg(g.cv, g.rect); }
+function readyWait(np, ms) { return new Promise((res) => { const t0 = performance.now(); const tick = () => { if (np.ready || performance.now() - t0 > (ms || 1500)) return res(); try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ } setTimeout(tick, 30); }; tick(); }); }
 function shHide() { try { if (SHD.layer) SHD.layer.show = false; if (SHD.prim) SHD.prim.show = false; } catch (e) { /* 무시 */ } SHD.shown = false; try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ } }
 async function showImg(cv, rect) {
   const blob = await new Promise((r) => cv.toBlob(r, 'image/png')), url = URL.createObjectURL(blob), rc = Cesium.Rectangle.fromDegrees(rect[0], rect[1], rect[2], rect[3]);
@@ -229,9 +252,11 @@ async function applyShadow(m) {
     // 엔진 자체 그림자(viewer.shadows): 시험에서 켜면 브이월드 엔진이 렌더 오류(ShadowMap.createPotentiallyVisibleSet RangeError)를 내서, 오류 시 자동으로 끈다. 기본 꺼짐.
     if (m.eng !== undefined && m.eng !== SHD.eng) { SHD.eng = !!m.eng; V.shadows = SHD.eng; if (SHD.eng && !SHD.engGuard) { SHD.engGuard = true; try { V.scene.renderError.addEventListener(() => { if (SHD.eng) { SHD.eng = false; try { V.shadows = false; } catch (x) { /* 무시 */ } say({ t: 'shack', engerr: true }); } }); } catch (x) { /* 무시 */ } } try { V.terrainShadows = SHD.eng ? Cesium.ShadowMode.ENABLED : Cesium.ShadowMode.DISABLED; } catch (e) { /* 무시 */ } }
     SHD.alpha = m.alpha != null ? m.alpha : SHD.alpha;
-    if (m.off || !m.on) { shHide(); if (m.off) shvHide(); }
-    else { const cv = drawShadow(m); if (SHD.mode === 'prim' && !(Cesium.GroundPrimitive && Cesium.GroundPrimitive.isSupported(V.scene))) SHD.mode = 'img';      // 지면 클램프를 못 쓰면 영상 레이어 방식으로
-    if (SHD.mode === 'prim') showPrim(cv, m.rect); else await showImg(cv, m.rect); SHD.n++; }
+    if (m.off) { for (const o of PS.values()) dropSlot(o); PS.clear(); shHide(); shvHide(); }
+    else {
+      let g; if (!m.on) g = { hide: true }; else { const cv = drawShadow(m); if (SHD.mode === 'prim' && !(Cesium.GroundPrimitive && Cesium.GroundPrimitive.isSupported(V.scene))) SHD.mode = 'img'; g = { cv, rect: m.rect }; SHD.n++; }      // 지면 클램프를 못 쓰면 영상 레이어 방식으로
+      if (m.ep !== undefined && m.volx) stage(m.ep, 'g', g); else await applyG(g);
+    }
     if (m.measure && m.center) { await frames(3, 800); eng = engSun(m.center); }
     else V.scene.requestRender && V.scene.requestRender();
   } catch (e) { say({ t: 'shack', seq: m.seq, ms: Math.round(performance.now() - t0), err: String(e && e.message || e).slice(0, 120) }); return; }
@@ -264,7 +289,7 @@ async function applyVol(m) {
   try {
     if (m.og && (!SHV.offs || performance.now() - SHV.offs.t > 20000)) shvOffs(m.og);
     SHV.alpha = m.alpha != null ? m.alpha : SHV.alpha;
-    if (!m.on || !m.verts || !m.verts.length) { shvHide(); }
+    if (!m.on || !m.verts || !m.verts.length) { if (m.ep !== undefined) stage(m.ep, 'v', { hide: true }); else shvHide(); }
     else {
       const P = m.verts; n = P.length / 27; const nv = n * 8, pos = new Float64Array(nv * 3), A_ = 6378137, E2 = 0.00669437999014;      // WGS84 직접 계산(Cartesian3.fromDegrees 를 정점마다 부르면 느렸다)
       let missed = 0; const bo = SHV.boc || (SHV.boc = new Map());      // 건물별 지형 높이 캐시: 건물이 수천 동인 동은 처음 계산이 오래 걸려(건물당 0.4 ms) 한 번에 40 ms 까지만 직접 재고 나머지는 격자 보간값으로 그리고, 곧바로 다시 불러 캐시를 채운다(SHV.boc 크기는 건물 수, 건물당 숫자 하나)
@@ -280,11 +305,12 @@ async function applyVol(m) {
       }
       SHV.nflip = nflip; SHV.missed = missed; SHV.refineM = missed ? m : null;
       const geom = new Cesium.Geometry({ attributes: { position: new Cesium.GeometryAttribute({ componentDatatype: Cesium.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values: pos }) }, indices: idx, primitiveType: Cesium.PrimitiveType.TRIANGLES, boundingSphere: Cesium.BoundingSphere.fromVertices(pos) });
-      const np = new Cesium.ClassificationPrimitive({ geometryInstances: [new Cesium.GeometryInstance({ geometry: geom, attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(shvColor(SHV.alpha)) }, id: 'shv' })], classificationType: Cesium.ClassificationType[SHV.type], asynchronous: false, compressVertices: false, interleave: false });
-      V.scene.primitives.add(np); let rt0 = 0; const ra = V.scene.preRender.addEventListener(() => { rt0 = performance.now(); }), rb = V.scene.postRender.addEventListener(() => { if (rt0) { SHV.rms = performance.now() - rt0; rt0 = 0; } }); setTimeout(() => { try { ra(); rb(); } catch (e) { /* 무시 */ } }, 1500); SHV.tb = tb; const old = SHV.prim; SHV.prim = np; SHV.shown = true;
+      const np = new Cesium.ClassificationPrimitive({ geometryInstances: [new Cesium.GeometryInstance({ geometry: geom, attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(shvColor(m.ep !== undefined ? 0 : SHV.alpha)) }, id: 'shv' })], classificationType: Cesium.ClassificationType[SHV.type], asynchronous: false, compressVertices: false, interleave: false });
+      V.scene.primitives.add(np); let rt0 = 0; const ra = V.scene.preRender.addEventListener(() => { rt0 = performance.now(); }), rb = V.scene.postRender.addEventListener(() => { if (rt0) { SHV.rms = performance.now() - rt0; rt0 = 0; } }); setTimeout(() => { try { ra(); rb(); } catch (e) { /* 무시 */ } }, 1500); SHV.tb = tb; if (m.ep !== undefined) { await readyWait(np); stage(m.ep, 'v', { np }); }      // 투명(알파 0)으로 먼저 만들어 두었다가 지면 그림자와 같은 프레임에 바꾼다
+      else { const old = SHV.prim; SHV.prim = np; SHV.shown = true;
       if (old) { await frames(2, 400); try { V.scene.primitives.remove(old); } catch (e) { /* 무시 */ } }
       else await frames(1, 300);
-      try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ }      // 요청 시에만 그리는 엔진: 교체 직후 한 번 더 그려 달라고 한다
+      try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ } }      // 요청 시에만 그리는 엔진: 교체 직후 한 번 더 그려 달라고 한다
     }
   } catch (e) { say({ t: 'shack', vol: true, err: String(e && e.message || e).slice(0, 160), ms: Math.round(performance.now() - t0) }); return; }
   say({ t: 'shack', vol: true, missed: SHV.missed || 0, nb: SHV.boc ? SHV.boc.size : 0, ms: Math.round((performance.now() - t0) * 10) / 10, build: Math.round((SHV.tb || 0) * 10) / 10, rms: Math.round((SHV.rms || 0) * 10) / 10, n, shown: SHV.shown, type: SHV.type });
