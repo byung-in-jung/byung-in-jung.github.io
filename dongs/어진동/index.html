@@ -4584,7 +4584,7 @@ function windowCover() {      // 조망 요약용 물·녹지 격자(D.areas 폴
   const x1 = TR.x0 + (NX - 1) * TR.dx, y1 = TR.y0 + (NY - 1) * TR.dy, res = Math.max(10, Math.ceil(Math.max(x1 - TR.x0, y1 - TR.y0) / 1500));
   return WindowView.coverRaster({ x0: TR.x0, y0: TR.y0, x1, y1, res, polys, cells });
 }
-function windowViewStart(w) {
+function windowViewStart(w) { window.__fmWinCur = w; /*wmark1*/
   WIN.lastW = w;
   if (WPICK.on) walkPickEnd();
   if (!WIN.on) { WIN.saved = { mode: S.mode, V: { ...V }, WK: { ...WK } }; WIN.prevB = (card.style.display !== 'none' && window.__fmCardB) || null; }
@@ -4600,7 +4600,7 @@ function windowViewStart(w) {
   if (first) fmToast('창가 시점: 드래그로 둘러보기 · 층 ▲▼·방향은 조망 요약 카드에서 · ESC 또는 ‘나가기’로 돌아가기');
   syncUI(); try { if (window.__vwo) window.__vwo.resync(); } catch (e) { /* 덮기 꺼짐 */ }
 }
-function windowViewEnd() {
+function windowViewEnd() { if (WIN.on) { try { if (window.__fmWmark) window.__fmWmark.exit(window.__fmWinCur, WK.yaw, WK.pitch, FOV_WIN); } catch (e) { /* 표식은 덤 */ } } /*wmark1*/
   if (!WIN.on) return; const sv = WIN.saved; WK.lock = false; WK.zAbs = null; WIN.on = false; WIN.saved = null; FOV_WIN = 0; if (SUN) SUN.windowEnded();
   $('winBar').style.display = 'none'; document.body.classList.remove('fm-window');
   if (sv && sv.mode === 'walk') { Object.assign(WK, sv.WK, { lock: false, zAbs: null }); $('walkpad').style.display = 'flex'; }
@@ -4609,6 +4609,7 @@ function windowViewEnd() {
   syncUI(); try { if (window.__vwo) window.__vwo.resync(); } catch (e) { /* 덮기 꺼짐 */ }
 }
 $('winExit').addEventListener('click', windowViewEnd);
+window.__fmWinSet = function (p) { if (!WIN.on || !p) return; if (isFinite(p.yaw)) WK.yaw = p.yaw; if (isFinite(p.pitch)) WK.pitch = p.pitch; if (p.fov >= 40 && p.fov <= 110) FOV_WIN = p.fov; syncUI(); }; /*wmark1*/
 
 
 const BAND_LO = [0, 0.4, 0.65, 0.8, 0.9, 0.95];
@@ -6055,5 +6056,124 @@ html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-
   /* 새 카드가 열릴 때는 항상 미니로 */
   var cd=d.getElementById('card');
   if(cd)new MutationObserver(function(){if(cd.style.display==='none')cd.classList.remove('dc-big')}).observe(cd,{attributes:true,attributeFilter:['style']});
-})();</script><!--/declutter1--></body>
+})();</script><!--/declutter1--><!--wmark1--><style id="wmark1">#wmLayer{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:hidden}
+#wmLayer .wm{position:absolute;left:0;top:0;width:44px;height:44px;pointer-events:auto;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;outline:none}
+#wmLayer.wm-wc .wm{pointer-events:none}
+#wmLayer .wm-i{position:absolute;left:9px;top:9px;width:26px;height:26px;opacity:.9;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+#wmLayer .wm-i svg{width:26px;height:26px;display:block}
+#wmLayer .wm:hover .wm-i,#wmLayer .wm:focus-visible .wm-i{opacity:1;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+#wmLayer .wm-x{display:none;position:absolute;right:0;top:0;width:18px;height:18px;border-radius:50%;border:1px solid #fff;background:#222;color:#fff;font-size:10px;line-height:16px;text-align:center;cursor:pointer}
+#wmLayer .wm:hover .wm-x,#wmLayer .wm:focus-within .wm-x{display:block}
+#wmShow.on,#wmClear.on{background:var(--acc);color:var(--on-acc,#04202e);border-color:var(--acc)}
+#wmClear:disabled{opacity:.45}</style><script id="wmark1js">/* wmark1: 창가 시점을 '나가기'로 끝낼 때 보던 자리를 지도 위 작은 표식(핀+방향 화살표)으로 남긴다.
+   저장: localStorage 'fm-wm:<동>' (최대 12개, 오래된 것부터 교체), 켜기/끄기 'fm-wmon'. 표식 = 화면 고정 크기 DOM(터치 44px), 3D 위치를 매 렌더 뒤에 투영.
+   본체 훅(앱 소스에 패치): window.__fmWmark.exit(w,yaw,pitch,fov) / window.__fmWinSet({yaw,pitch,fov}) / window.__fmWinCur. 이 파일은 declutter1 뒤 마지막에 주입. */
+(function () {
+  if (window.__wm1) return; window.__wm1 = 1;
+  var d = document, MAX = 12, KON = 'fm-wmon';
+  var dong = (function () { try { var m = location.pathname.match(/\/dongs\/([^\/]+)\//); return m ? decodeURIComponent(m[1]) : 'x'; } catch (e) { return 'x'; } })();
+  var KEY = 'fm-wm:' + dong;
+  var list = [], on = true, layer = null, sa = null, cam = null, rdr = null, THREE = null, tmp = null, clr = { arm: false, tm: 0 };
+  function fin(v) { return typeof v === 'number' && isFinite(v); }
+  function valid(r) { return r && fin(r.x) && fin(r.y) && fin(r.z) && fin(r.nx) && fin(r.ny) && fin(r.px) && fin(r.py) && fin(r.pz) && r.id != null && fin(r.yaw); }
+  function load() { try { var s = localStorage.getItem(KEY); if (s) { var a = JSON.parse(s); if (Array.isArray(a)) return a.filter(valid).slice(-MAX); } } catch (e) { /* 저장소 없음: 이번 방문 동안만 */ } return []; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(list.map(function (r) { var c = {}; for (var k in r) if (k !== '__e') c[k] = r[k]; return c; }))); } catch (e) { /* 저장 실패해도 동작 */ } }
+  try { on = localStorage.getItem(KON) !== '0'; } catch (e) { /* */ }
+  function toast(m) { var t = d.getElementById('toast'); if (t) { t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2600); } }
+  function title(r) { return r.floor + '층 ' + (r.orient || '') + '향 · 눌러서 다시 보기 (길게 누르면 삭제)'; }
+
+  var SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11.5" fill="#f08a1c" stroke="#fff" stroke-width="1.5"/><path d="M13 4.5 L19 16 L13 13.2 L7 16 Z" fill="#fff" stroke="#fff" stroke-width="1" stroke-linejoin="round"/></svg>';
+  function build() {
+    if (!d.body) return;
+    if (!layer) { layer = d.createElement('div'); layer.id = 'wmLayer'; d.body.appendChild(layer); layer.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.wm')) e.preventDefault(); }); }
+    layer.textContent = '';
+    list.forEach(function (r) {
+      var e = d.createElement('div'); e.className = 'wm'; e.setAttribute('role', 'button'); e.tabIndex = 0; e.title = title(r); e.setAttribute('aria-label', '창가 표식 ' + title(r));
+      e.innerHTML = '<span class="wm-i">' + SVG + '</span><span class="wm-x" role="button" aria-label="이 표식 지우기" title="이 표식 지우기">✕</span>';
+      var lp = 0, fired = false, sx = 0, sy = 0;
+      e.addEventListener('pointerdown', function (ev) { if (ev.target.closest('.wm-x')) return; fired = false; sx = ev.clientX; sy = ev.clientY; clearTimeout(lp); lp = setTimeout(function () { fired = true; remove(r); }, 600); });
+      e.addEventListener('pointermove', function (ev) { if (lp && (Math.abs(ev.clientX - sx) > 8 || Math.abs(ev.clientY - sy) > 8)) { clearTimeout(lp); lp = 0; } });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { e.addEventListener(n, function () { clearTimeout(lp); lp = 0; }); });
+      e.addEventListener('click', function (ev) { ev.stopPropagation(); if (ev.target.closest('.wm-x')) { remove(r); return; } if (fired) { fired = false; return; } enter(r); });
+      e.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); enter(r); } else if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); remove(r); } });
+      layer.appendChild(e); r.__e = e;
+    });
+    syncUI(); upd();
+  }
+  function remove(r) { var i = list.indexOf(r); if (i < 0) return; list.splice(i, 1); save(); build(); toast('창가 표식을 지웠어요'); }
+  function enter(r) {
+    var SUN = null; try { SUN = sa.SUN(); } catch (e) { /* */ }
+    if (!SUN || !SUN.windowViewAtWall) { toast('아직 준비 중이에요. 잠시 뒤 다시 눌러 주세요'); return; }
+    window.__fmWinCur = null; var ok = false;
+    try { ok = SUN.windowViewAtWall(r.id, r.x, r.y, r.z, r.nx, r.ny); } catch (e) { ok = false; }
+    var w = window.__fmWinCur;
+    if ((!ok || (w && r.floor != null && w.floor !== r.floor)) && SUN.windowView && r.edge != null) { try { ok = SUN.windowView(r.id, r.floor, r.edge, null, r.az); } catch (e) { /* */ } }
+    if (!ok) { toast('이 표식의 창가 자리를 열지 못했어요'); return; }
+    if (window.__fmWinSet) window.__fmWinSet({ yaw: r.yaw, pitch: r.pitch, fov: r.fov });
+  }
+  function exit(w, yaw, pitch, fov) {
+    if (!w || !w.pt || !fin(w.pt.x) || !fin(w.pt.y) || !fin(w.pt.nx) || !fin(w.pt.ny)) return;
+    var nx = w.pt.nx, ny = w.pt.ny, px = w.pt.x + nx * 1.2, pz = -(w.pt.y + ny * 1.2), py = fin(w.eyeZ) ? w.eyeZ : w.pt.z;
+    var r = { id: w.id, floor: w.floor, label: w.label, orient: w.orient, edge: w.edge, az: w.az, x: w.pt.x - nx * 0.1, y: w.pt.y - ny * 0.1, z: w.pt.z, nx: nx, ny: ny, yaw: yaw, pitch: pitch || 0, fov: fov || 0, px: px, py: py, pz: pz, t: Date.now() };
+    if (!valid(r)) return;
+    list = list.filter(function (o) { return !(o.id === r.id && o.floor === r.floor && Math.hypot(o.x - r.x, o.y - r.y) < 1.5); });
+    list.push(r); while (list.length > MAX) list.shift();
+    save(); build(); if (on) toast('창가 표식을 남겼어요 (' + r.floor + '층 ' + (r.orient || '') + '향)');
+  }
+  window.__fmWmark = { exit: exit, list: function () { return list.slice(); }, clear: function () { list = []; save(); build(); }, setOn: setOn, max: MAX, update: function () { upd(); } };
+
+  function upd() {
+    if (!layer || !cam) return;
+    var hide = !on || !list.length || d.body.classList.contains('fm-window');
+    layer.classList.toggle('wm-wc', !!window.__fmWinClick);
+    if (hide) { if (layer.style.display !== 'none') layer.style.display = 'none'; return; }
+    if (layer.style.display === 'none') layer.style.display = '';
+    var rc = rdr.domElement.getBoundingClientRect(), W = rc.width, H = rc.height; if (!W || !H) return;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i], e = r.__e; if (!e) continue;
+      tmp.set(r.px, r.py, r.pz).project(cam);
+      var vis = tmp.z > -1 && tmp.z < 1 && Math.abs(tmp.x) < 1.15 && Math.abs(tmp.y) < 1.15;
+      if (!vis) { if (e.style.display !== 'none') e.style.display = 'none'; continue; }
+      var sx = rc.left + (tmp.x * 0.5 + 0.5) * W, sy = rc.top + (-tmp.y * 0.5 + 0.5) * H;
+      var az = -r.yaw;
+      tmp.set(r.px + Math.sin(az) * 6, r.py, r.pz - Math.cos(az) * 6).project(cam);
+      var dx = (rc.left + (tmp.x * 0.5 + 0.5) * W) - sx, dy = (rc.top + (-tmp.y * 0.5 + 0.5) * H) - sy, rot = Math.atan2(dx, -dy) * 180 / Math.PI;
+      if (e.style.display === 'none') e.style.display = '';
+      e.style.transform = 'translate(' + (sx - 22).toFixed(1) + 'px,' + (sy - 22).toFixed(1) + 'px)';
+      var ic = e.firstChild; if (ic && isFinite(rot)) ic.style.transform = 'rotate(' + rot.toFixed(0) + 'deg)';
+    }
+  }
+
+  /* 설정(⋯) 항목 */
+  var bShow = null, bClr = null;
+  function syncUI() {
+    if (bShow) { bShow.textContent = '창가 표식: ' + (on ? '켜짐' : '꺼짐'); bShow.setAttribute('aria-pressed', String(on)); bShow.classList.toggle('on', on); }
+    if (bClr) { bClr.disabled = !list.length; if (!clr.arm) bClr.textContent = '표식 지우기 (' + list.length + ')'; }
+  }
+  function setOn(v) { on = !!v; try { localStorage.setItem(KON, on ? '1' : '0'); } catch (e) { /* */ } syncUI(); upd(); }
+  function setupUI() {
+    var tb = d.getElementById('topbar'); if (!tb) return false; if (d.getElementById('wmShow')) return true;
+    bShow = d.createElement('button'); bShow.type = 'button'; bShow.className = 'btn'; bShow.id = 'wmShow';
+    bShow.title = '창가 시점에서 나갈 때 보던 자리를 지도에 표식으로 남겨요. 브이월드 덮기 중에는 표식 위치가 조금 어긋날 수 있어요.';
+    bShow.addEventListener('click', function () { setOn(!on); var vf = d.getElementById('vwFrame'); toast(on ? '창가 표식 켜짐' + (vf && vf.style.visibility === 'visible' ? ' · 브이월드 덮기 중엔 위치가 조금 어긋날 수 있어요' : '') : '창가 표식 숨김 (저장된 표식은 그대로예요)'); });
+    bClr = d.createElement('button'); bClr.type = 'button'; bClr.className = 'btn'; bClr.id = 'wmClear'; bClr.title = '남긴 창가 표식을 모두 지워요 (두 번 눌러 확인)';
+    bClr.addEventListener('click', function () {
+      if (!clr.arm) { clr.arm = true; bClr.textContent = '정말 모두 지울까요? 한 번 더'; bClr.classList.add('on'); clearTimeout(clr.tm); clr.tm = setTimeout(function () { clr.arm = false; bClr.classList.remove('on'); syncUI(); }, 4000); return; }
+      clearTimeout(clr.tm); clr.arm = false; bClr.classList.remove('on'); list = []; save(); build(); toast('창가 표식을 모두 지웠어요');
+    });
+    var th = d.getElementById('bTheme'); tb.insertBefore(bShow, th || null); tb.insertBefore(bClr, th || null); syncUI(); return true;
+  }
+
+  var n = 0, iv = setInterval(function () {
+    n++;
+    var s = window.__sa;
+    if (s && s.ready && s.renderer && s.camera && s.THREE && d.body) {
+      clearInterval(iv); sa = s; cam = s.camera; rdr = s.renderer; THREE = s.THREE; tmp = new THREE.Vector3();
+      list = load();
+      var o = rdr.render; rdr.render = function (sc, c) { var x = o.apply(this, arguments); if (c === cam) { try { upd(); } catch (e) { /* */ } } return x; };
+      var u = 0, ui = setInterval(function () { if (setupUI() || ++u > 100) clearInterval(ui); }, 300);
+      build(); addEventListener('resize', upd);
+    } else if (n > 1500) clearInterval(iv);
+  }, 200);
+})();</script><!--/wmark1--></body>
 </html>
