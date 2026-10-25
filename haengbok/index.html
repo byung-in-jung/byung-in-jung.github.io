@@ -2257,7 +2257,14 @@ html:not([data-adv="1"]) #sun-panel .sun-hd{padding:3px 6px 3px 12px!important;m
 html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-height:30px!important;width:30px;height:30px;padding:0}
 #sun-panel:not(.dc-more) button.sun-b{min-height:28px;padding:2px 8px}
 #sun-panel:not(.dc-more) .sun-bd>.dc-keep{margin-top:2px;margin-bottom:2px}
-#sun-panel:not(.dc-more) #sun-read{min-height:0;padding:0}</style><script id="declutter1js">/* declutter1 JS: 약식 일조 패널 '더 보기' · 지도 탭 접힘 · 카드 확장 토글 · qpanel 합치기. 어떤 것도 패널을 자동으로 열지 않는다. */
+#sun-panel:not(.dc-more) #sun-read{min-height:0;padding:0}
+/* declutter2: 창가 시점 나가기 막대 소형화(작은 알약, 라벨 짧게, 터치 영역 확장) */
+#winBar{position:fixed!important;left:auto!important;right:10px!important;top:10px!important;bottom:auto!important;transform:none!important;width:auto!important;max-width:min(340px,calc(100vw - 20px))!important;flex-wrap:nowrap!important;align-items:center;gap:6px;padding:3px 3px 3px 12px!important;border-radius:999px!important;font-size:12px!important;z-index:60}
+#winBar #winTxt{flex:0 1 auto!important;min-width:0;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.2}
+#winBar #winExit{position:relative;flex:0 0 auto!important;min-height:28px!important;height:28px!important;padding:0 10px!important;font-size:0!important;border-radius:999px;box-shadow:none}
+#winBar #winExit::after{content:"✕ 나가기";font-size:12px;line-height:28px;font-weight:600}
+#winBar #winExit::before{content:"";position:absolute;inset:-8px -4px}
+@media (max-width:720px),(max-height:620px){#winBar #winTxt{display:none}#winBar{left:10px!important;right:auto!important;top:auto!important;bottom:44px!important;padding:3px!important}}</style><script id="declutter1js">/* declutter1 JS: 약식 일조 패널 '더 보기' · 지도 탭 접힘 · 카드 확장 토글 · qpanel 합치기. 어떤 것도 패널을 자동으로 열지 않는다. */
 (function(){
   if(window.__dc1)return;window.__dc1=1;
   var d=document,de=d.documentElement;de.classList.add('dc1');
