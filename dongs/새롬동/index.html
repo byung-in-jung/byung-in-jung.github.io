@@ -5316,11 +5316,14 @@ const VWO = (() => {
   const SHENABLE = true;
   const SH = { en: false, on: false, str: 60, lastKey: '', busy: false, seq: 0, cms: [], applyMs: [], area: null, zmax: null, zmin: null, last: 0, eng: false, slowR: 0, minGap: 150, minGapFloor: 150, info: null, manual: false, lastS: undefined, hideWin: false, sent: 0, sentAt: 0, ack: null, vol: true, self: false, volIn: 1.0, volOut: -1.0, volUp: 0.5, volMinAlt: 3, volMinH: 6, volGap: 400, volCap: 25000, simp: 0, slow: 0, fast: 0, volInfo: null, lowres: false, tmCell0: 16, lastVol: 0, vms: [], vack: null, og: false };
   const shBtn = $('bVwSh'), shSl = $('vwShSlider');
+  function shScopeM() { try { return matchMedia('(pointer:coarse)').matches ? 700 : 1200; } catch (e) { return 1200; } }      /*shadowscope1*/
+  function shScopeSide() { try { return matchMedia('(pointer:coarse)').matches ? 4200 : 6000; } catch (e) { return 6000; } }      /*shadowscope1*/
+  function shVolCap() { let c = 40000; try { if (matchMedia('(pointer:coarse)').matches) c = 18000; const fs = window.__sa && window.__sa.frameStats && window.__sa.frameStats(); if (fs && fs.n > 30 && fs.p95 > 150) c = Math.min(c, 12500); } catch (e) { /* 기본값 */ } return c; }      /*shadowscope1: 쐐기 정점 상한(적응형)*/
   function shArea() {      // 새롬동 영역(동 경계 bbox + 150 m): 그림자를 만들 곳. 캔버스는 이 영역 전체
     if (SH.area) return SH.area;
     const dr = f10(D.dong); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     for (let i = 0; i < dr.length; i += 2) { x0 = Math.min(x0, dr[i]); x1 = Math.max(x1, dr[i]); y0 = Math.min(y0, dr[i + 1]); y1 = Math.max(y1, dr[i + 1]); }
-    const M = 150; x0 -= M; y0 -= M; x1 += M; y1 += M;
+    const M = 150, SCM = Math.max(0, Math.min(shScopeM(), (shScopeSide() - Math.max(x1 - x0, y1 - y0)) / 2)); x0 -= SCM; y0 -= SCM; x1 += SCM; y1 += SCM; /*shadowscope1: 동 경계 + 주변 맥락 건물까지*/
     // 동 경계가 강·산을 크게 품은 동(나성동은 7.2 x 3.9 km)은 캔버스 해상도가 거칠어지므로(2.4 m/px), 건물이 있는 범위 + 150 m 로 줄인다(그림자는 건물에서만 생기고 지형 그림자는 건물 쪽에서만 보인다). 건물이 없으면 동 경계 그대로.
     { const Q = SUN && SUN.getQ && SUN.getQ(); let bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9, nb = 0;
       if (Q) for (const b of Q.buildings) { const bb = b.bbox; if (!bb) continue; const cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2; if (cx < x0 || cx > x1 || cy < y0 || cy > y1) continue; nb++; if (bb[0] < bx0) bx0 = bb[0]; if (bb[2] > bx1) bx1 = bb[2]; if (bb[1] < by0) by0 = bb[1]; if (bb[3] > by1) by1 = bb[3]; }
@@ -5394,11 +5397,14 @@ const VWO = (() => {
       }
     }
     // 정점 예산: 쐐기 하나 = 8 정점(27 수). 상한(volCap, 새롬동 1.3만 기준 2.5만 이하)을 넘으면 높은 건물의 쐐기부터 남긴다(높은 건물이 다른 건물에 그림자를 많이 드리운다). 재생 중에는 상한을 60 %로.
-    const capN = Math.floor(SH.volCap * (SH.lowres ? 0.6 : 1) * [1, 1, 0.7, 0.5][Math.min(3, SH.simp)] / 8), nAll = hs.length;
+    const capN = Math.floor(shVolCap() * (SH.lowres ? 0.6 : 1) * [1, 1, 0.7, 0.5][Math.min(3, SH.simp)] / 8), nAll = hs.length;
     if (nAll > capN) {
-      const sorted = Float32Array.from(hs).sort(), thr = sorted[nAll - capN], keep = []; let kept = 0;
-      for (let w = 0; w < nAll; w++) if (hs[w] >= thr && kept < capN) { kept++; for (let k = 0; k < 27; k++) keep.push(out[27 * w + k]); }
-      SH.volInfo = { all: nAll, kept, thr: Math.round(thr * 10) / 10, minH, simp: SH.simp, lowres: SH.lowres }; return new Float64Array(keep);
+      /*shadowscope1: 카메라 초점에서 가까운(그리고 높은) 건물의 쐐기부터 남긴다*/
+      const V0 = window.__V, fx = V0 ? V0.tx : (A.x0 + A.x1) / 2, fy = V0 ? -V0.tz : (A.y0 + A.y1) / 2, sc = new Array(nAll), keep = []; let kept = 0;
+      for (let w = 0; w < nAll; w++) sc[w] = [Math.hypot((out[27 * w] - lon0) * KXm - fx, (out[27 * w + 1] - lat0) * KYm - fy) - 2.5 * hs[w], w];
+      sc.sort((p, q) => p[0] - q[0]);
+      for (let k = 0; k < capN; k++) { const w = sc[k][1]; kept++; for (let q = 0; q < 27; q++) keep.push(out[27 * w + q]); }
+      SH.volInfo = { all: nAll, kept, thr: null, minH, simp: SH.simp, lowres: SH.lowres, cap: capN }; return new Float64Array(keep);
     }
     SH.volInfo = { all: nAll, kept: nAll, thr: null, minH, simp: SH.simp, lowres: SH.lowres };
     return new Float64Array(out);
