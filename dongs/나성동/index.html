@@ -2211,7 +2211,7 @@ ${sBars(Object.assign({ noDir }, A))}`;
     dom.addEventListener('pointerup', (e) => { if (qs.pick && pd && Math.hypot(e.clientX - pd[0], e.clientY - pd[1]) <= 5 && Q) pickAt(e.clientX, e.clientY); });
 
     // ---------------------------------------------------------------------------------------- wiring
-    function refresh(cause) { if (S.night) S.night = false; computeSun(); updateReadout(); skyAndLight(); if (WVc && WVc.active) WVc.onRefresh(); dirty = true; if (o.requestRender) o.requestRender(); if (cause !== 'play') save(); }
+    function refresh(cause) { computeSun(); updateReadout(); skyAndLight(); if (WVc && WVc.active) WVc.onRefresh(); dirty = true; if (o.requestRender) o.requestRender(); if (cause !== 'play') save(); }
     $('#sun-d').addEventListener('input', (e) => { S.doy = +e.target.value; S.doyF = S.doy; refresh(); ovStale('date'); });
     $('#sun-t').addEventListener('input', (e) => { S.min = +e.target.value; refresh(); });
     panel.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => {
@@ -2280,14 +2280,11 @@ ${sBars(Object.assign({ noDir }, A))}`;
     computeSun();
     // night start: when the sun is below the horizon, start at the nearest day (12:00) and say so in one line
     function noonFix() {
-      if (sunNow.alt > 0.3) return false;
-      S.min = 720; computeSun();
-      if (sunNow.alt <= 0.3) { const k = new Date(Date.UTC(YEAR, 0, S.kdoy, 0, 720) - KST_MIN * 60000), n = nowState(k); S.doy = n.doy; S.min = n.min; }
+      /*noon1*/ { const k = new Date(Date.UTC(YEAR, 0, S.kdoy, 0, 720) - KST_MIN * 60000), n = nowState(k); S.doy = n.doy; S.min = n.min; }      // 접속한 날, 시각은 항상 정오(한국 시간 12:00)
       S.doyF = S.doy; computeSun(); return true;
     }
-    const nightFixed = o.nightNoon !== false && noonFix();
+    if (o.nightNoon !== false) noonFix();
     showHide(); updateReadout(); skyAndLight();
-    if (nightFixed) S.night = true;      // R5: '밤이라 낮 12시로' 안내 문구는 12:00 표시와 겹쳐 오해를 줘 없앴다(시각 표시가 이미 12:00)
     requestAnimationFrame(loop);
 
     const inst = {
@@ -5567,7 +5564,25 @@ const VWO = (() => {
       const k0 = SH.lastKey; shSend(false); if (SH.lastKey !== k0) SH.last = now;
     }, 60);
   }
-    // Public release omits VWorld-derived capture-time and shadow-overlay data.
+    // ---- '영상 촬영 시각' 칩(새롬동만): 일조 패널 날짜 칩 줄에 붙인다(패널 코드는 공통 애드온이라 건드리지 않고 여기서 끼움). 누르면 일조 시각·날짜를 브이월드 영상에 구워진 그림자의 촬영 시점(추정)으로 맞추고, 한 번 더 누르면 이전 시각으로 돌아간다.
+  const CAPCFG = {"m":7,"d":10,"kmin":620,"txt":"7월 10일 10:20경(영상 추정)","note":"이 동은 영상에서 재기엔 표본이 부족해(고층 6동) 새롬동 값을 썼어요.","measured":{"n":6,"az":102,"alt_adj":56.3,"se":2.5,"t":612,"lo":601,"hi":623,"conc":0.374,"delta":-8}};
+  const CAP = Object.assign({ m: 7, d: 10, kmin: 620, prev: null, txt: '7월 10일 10:20경(영상 추정)', note: '' }, CAPCFG || {});
+  function capIsOn() { const S = SUN && SUN.state; return !!S && S.kd && S.kd.month === CAP.m && S.kd.day === CAP.d && Math.abs(S.kmin - CAP.kmin) <= 2; }
+  function capGo() { if (!SUN) return; const S = SUN.state; if (capIsOn()) { const p = CAP.prev || { m: 12, d: 22, kmin: 720 }; SUN.setDate(p.m, p.d); SUN.setTimeKST(p.kmin / 60); CAP.prev = null; } else { CAP.prev = { m: S.kd.month, d: S.kd.day, kmin: S.kmin }; SUN.setDate(CAP.m, CAP.d); SUN.setTimeKST(CAP.kmin / 60); } capUI(); }
+  function capUI() {
+    const b = document.getElementById('vwCapChip'), n = document.getElementById('vwCapNote'); if (!b) return; const on = capIsOn();
+    b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('on', on); b.textContent = on ? '영상 촬영 시각 · ' + CAP.txt : '영상 촬영 시각';
+    n.textContent = '브이월드 영상이 찍힌 때(추정)의 그림자와 비교해 볼 수 있어요. 촬영 시각은 추정이라 ±수 분 오차가 있어요.' + (CAP.note ? ' ' + CAP.note : '') + (st.on && st.state === 'on' ? '' : ' 위의 \'브이월드로 덮어 보기\'를 켜면 영상에 구워진 그림자와 겹쳐 볼 수 있어요.') + (on ? ' (다시 누르면 이전 시각으로 돌아가요)' : '');
+  }
+  if (SHENABLE) setInterval(() => {
+    if (!SUN) return; const row = document.querySelector('#sun-panel .sun-dates'); if (!row) return;
+    if (!document.getElementById('vwCapChip')) {
+      const b = document.createElement('button'); b.className = 'sun-b'; b.id = 'vwCapChip'; b.type = 'button'; b.style.minHeight = '44px'; b.title = '브이월드 영상에 구워진 그림자가 찍힌 때(추정: ' + CAP.txt + ')로 일조 시각을 맞춰요. 한 번 더 누르면 이전 시각으로 돌아가요.'; b.addEventListener('click', capGo); const wrap = document.createElement('div'); wrap.className = 'sun-chips'; wrap.id = 'vwCapRow'; wrap.style.margin = '4px 0 0'; wrap.appendChild(b); row.insertAdjacentElement('afterend', wrap);      // 날짜 칩 줄은 가로로 넘쳐 잘리므로 바로 아래 줄에 둔다
+      const n = document.createElement('div'); n.id = 'vwCapNote'; n.className = 'sun-mut sun-sm'; n.setAttribute('role', 'note'); wrap.insertAdjacentElement('afterend', n);
+    }
+    capUI();
+  }, 600);
+if (SHENABLE) window.__vwShadow = { SH, CAP, SUN: () => SUN, hAt, REG, g0, KXm, KYm, volCompute: () => { shArea(); return shVolCompute(); }, compute: () => { shArea(); return shCompute(); }, send: shSend, area: shArea, setEng: (on) => { SH.eng = !!on; SH.lastKey = ''; shSend(true); }, measure: () => { SH.wantMeasure = true; SH.lastKey = ''; shSend(true); }, setMode: (m) => send({ t: 'shmode', mode: m }) };
 
   label();
   return { st, ourCam, toLL, toXY, turnOn, turnOff, back, resync, wallPick, wallSnap, showBar, veil, vsay, barH, loaded, retry };
@@ -5843,7 +5858,7 @@ var pi=setInterval(function(){if(ready()){clearInterval(pi);try{parent.postMessa
 function watchSun(){var p=document.getElementById('sun-panel');if(!p){setTimeout(watchSun,600);return}
  var last=!p.classList.contains('sun-hidden');
  new MutationObserver(function(){var open=!p.classList.contains('sun-hidden');if(open===last)return;last=open;var v=vwo();
-  if(open){if(v&&v.st&&v.st.on){wasOn=true;autoOff=true;v.turnOff();setState('auto');toast('일조 보기 중에는 브이월드를 잠시 꺼요',3200)}else{wasOn=false}}
+  if(open){wasOn=false;autoOff=false}/*vwshadow1*/
   else{if(wasOn){wasOn=false;autoOff=false;setState('loading');setTimeout(function(){if(v&&v.st&&!v.st.on)v.turnOn()},250);toast('브이월드를 다시 켰어요 · 보던 위치 그대로',2600)}else{autoOff=false}}}).observe(p,{attributes:true,attributeFilter:['class']})}
 watchSun();
 var mv=false;['pointerdown','wheel','touchstart','keydown'].forEach(function(e){document.addEventListener(e,function(){if(mv)return;mv=true;try{parent.postMessage({type:'vw-moved'},'https://scity3d.blogspot.com')}catch(x){}},{capture:true,passive:true})});
@@ -5882,5 +5897,6 @@ html.fm-ext #bVw,html.fm-ext #bVwChip{display:none!important}
 html.fm-ext[data-adv="1"] #topbar{top:46px}
 html.fm-ext:not([data-adv="1"]) #topbar>.fm-core::after,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind::after,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv::before{inset:-5px}
 html.fm-ext:not([data-adv="1"]) #topbar>.fm-core,html.fm-ext:not([data-adv="1"]) #topbar>#fmFind,html.fm-ext:not([data-adv="1"]) #topbar>#bAdv{border-color:rgba(60,50,20,.32)}
-}</style><!--/phonefix2--></body>
+}</style><!--/phonefix2--><style id="vwshadow1">#vwCapRow{max-width:100%}#vwCapChip{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}#vwCapNote{font-size:11.5px;line-height:1.4}
+@media (max-width:720px){#vwCapChip{min-height:36px!important;padding:0 10px}#vwCapNote{display:none}}</style></body>
 </html>

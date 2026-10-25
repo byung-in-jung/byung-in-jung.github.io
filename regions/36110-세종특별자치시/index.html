@@ -2201,7 +2201,7 @@ ${sBars(Object.assign({ noDir }, A))}`;
     dom.addEventListener('pointerup', (e) => { if (qs.pick && pd && Math.hypot(e.clientX - pd[0], e.clientY - pd[1]) <= 5 && Q) pickAt(e.clientX, e.clientY); });
 
     // ---------------------------------------------------------------------------------------- wiring
-    function refresh(cause) { if (S.night) S.night = false; computeSun(); updateReadout(); skyAndLight(); if (WVc && WVc.active) WVc.onRefresh(); dirty = true; if (o.requestRender) o.requestRender(); if (cause !== 'play') save(); }
+    function refresh(cause) { computeSun(); updateReadout(); skyAndLight(); if (WVc && WVc.active) WVc.onRefresh(); dirty = true; if (o.requestRender) o.requestRender(); if (cause !== 'play') save(); }
     $('#sun-d').addEventListener('input', (e) => { S.doy = +e.target.value; S.doyF = S.doy; refresh(); ovStale('date'); });
     $('#sun-t').addEventListener('input', (e) => { S.min = +e.target.value; refresh(); });
     panel.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => {
@@ -2270,14 +2270,11 @@ ${sBars(Object.assign({ noDir }, A))}`;
     computeSun();
     // night start: when the sun is below the horizon, start at the nearest day (12:00) and say so in one line
     function noonFix() {
-      if (sunNow.alt > 0.3) return false;
-      S.min = 720; computeSun();
-      if (sunNow.alt <= 0.3) { const k = new Date(Date.UTC(YEAR, 0, S.kdoy, 0, 720) - KST_MIN * 60000), n = nowState(k); S.doy = n.doy; S.min = n.min; }
+      /*noon1*/ { const k = new Date(Date.UTC(YEAR, 0, S.kdoy, 0, 720) - KST_MIN * 60000), n = nowState(k); S.doy = n.doy; S.min = n.min; }      // 접속한 날, 시각은 항상 정오(한국 시간 12:00)
       S.doyF = S.doy; computeSun(); return true;
     }
-    const nightFixed = o.nightNoon !== false && noonFix();
+    if (o.nightNoon !== false) noonFix();
     showHide(); updateReadout(); skyAndLight();
-    if (nightFixed) S.night = true;      // R5: '밤이라 낮 12시로' 안내 문구는 12:00 표시와 겹쳐 오해를 줘 없앴다(시각 표시가 이미 12:00)
     requestAnimationFrame(loop);
 
     const inst = {
