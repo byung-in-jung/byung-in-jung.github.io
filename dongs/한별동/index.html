@@ -5970,7 +5970,9 @@ html:not([data-adv="1"]) #sun-panel .sun-hd{min-height:36px}
 #sun-qpanel:not(.dc-in){display:none!important}
 
 /* 시계 칩: 패널이 닫힌 채 그림자/재생 중일 때만 작게 */
-html:not([data-adv="1"]) #sun-clock:not(.sun-hidden){display:block!important;top:10px!important;right:10px!important;min-width:0;padding:3px 40px 3px 10px;border-radius:999px;box-shadow:0 2px 10px rgba(30,40,15,.18)}
+html:not([data-adv="1"]) #sun-clock:not(.sun-hidden){display:block!important;min-width:0;padding:3px 40px 3px 10px;border-radius:999px;box-shadow:0 2px 10px rgba(30,40,15,.18)}
+html:not([data-adv="1"]) #sun-clock:not(.sun-hidden):not(.fm-moved){top:10px!important;right:10px!important}
+html:not([data-adv="1"]) #sun-clock.fm-moved:not(.sun-hidden){right:auto!important;width:auto!important;max-width:200px}
 #sun-clock .sun-ck-d,#sun-clock .sun-ck-sub{display:none!important}
 #sun-clock .sun-ck-b{width:28px;height:28px;right:3px;top:50%;margin-top:-14px;font-size:12px}
 @media (max-width:720px) and (orientation:portrait){
