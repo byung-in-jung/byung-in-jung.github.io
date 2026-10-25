@@ -5031,6 +5031,7 @@ const nbRingsG = new THREE.Group(); scene.add(nbRingsG);
 const nbShown = (i) => i === 0 || (NBS.on[i] && NBDG[i].cls <= NBMAXCLS[NBS.mode]);
 function dongOn(i) { return nbShown(i); }                                        // dong viewers: flow follows this too
 function nbPip(x, y, r) { let ins = false; for (let i = 0, j = r.length - 2; i < r.length; j = i, i += 2) { const xi = r[i], yi = r[i + 1], xj = r[j], yj = r[j + 1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi) ins = !ins; } return ins; }
+window.__fmDongData = () => (typeof NBDG !== 'undefined' ? NBDG : []);      /*curdong1*/
 function nbDongAt(x, y) { for (let i = 0; i < NBDG.length; i++) { const b = NBDG[i].bbox; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && nbPip(x, y, NBDG[i].ringF)) return i; } return -1; }
 
 // ---- coarse region terrain (also supplies ground height beyond this dong's own terrain)
@@ -6521,7 +6522,8 @@ body.hideall #vwChrome{display:none}
     bar.innerHTML = '<span class="vc-name"></span><span class="vc-sep" aria-hidden="true"></span><div class="vc-seg" role="group" aria-label="지도 종류"><button type="button" data-v="map" aria-pressed="false">지도</button><button type="button" data-v="sat" aria-pressed="false">위성</button></div>' +
       '<button type="button" class="vc-b vc-more" aria-label="브이월드 설정 열기" aria-expanded="false" title="브이월드 설정">⌄</button><span class="vc-sep" aria-hidden="true"></span>' +
       '<button type="button" class="vc-b vc-share" aria-label="링크 공유" title="링크 공유">' + IC_SHARE + '</button><button type="button" class="vc-b vc-full" aria-label="전체 화면" title="전체 화면">' + IC_IN + '</button>';
-    d.body.appendChild(bar); bar.querySelector('.vc-name').textContent = nm;
+    d.body.appendChild(bar); if (window.__fmCurDong) nm = window.__fmCurDong; bar.querySelector('.vc-name').textContent = nm;
+    d.addEventListener('fm-curdong', function (e) { if (e.detail) { nm = e.detail; bar.querySelector('.vc-name').textContent = nm; } });
     bar.querySelector('[data-v=map]').addEventListener('click', function () { var o = window.__vwo; if (o && o.st.on) o.turnOff(); setTimeout(sync, 250); });
     bar.querySelector('[data-v=sat]').addEventListener('click', function () { var o = window.__vwo; if (o && !o.st.on) o.turnOn(); setTimeout(sync, 250); });
     bar.querySelector('.vc-more').addEventListener('click', function () { if (window.__fmVwPanel) window.__fmVwPanel.toggle(); });
@@ -6546,5 +6548,38 @@ body.hideall #vwChrome{display:none}
     if (!o) sa.disabled = true; else sa.disabled = false;
   }
   setInterval(function () { try { if (d.body) { build(); sync(); } } catch (e) { /* 아직 준비 전 */ } }, 500);
+})();
+
+/* curdong1: 지금 보는 위치(카메라 주시점)가 속한 동 이름을 구해 알린다. 판정은 21개 동 경계(장면의 NBDG ring, 바운딩 박스 선검사). 50 m 히스테리시스, 경계 300 m 밖이면 '행복도시 밖'.
+   단독 뷰어: #vwChrome 동 이름 갱신 / 블로그 임베드: {type:'vw-dong', name} 을 부모로 보낸다. 사용자가 고른 동 장면은 그대로(장면은 다시 불러오지 않음). */
+(function () {
+  if (window.__cd1) return; window.__cd1 = 1;
+  var ext = /[#&]ext=1/.test(location.hash), cur = -2, curName = '', lastKey = '';
+  function ptSeg(x, y, ax, ay, bx, by) { var vx = bx - ax, vy = by - ay, L2 = vx * vx + vy * vy, t = L2 ? Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / L2)) : 0; return Math.hypot(x - (ax + t * vx), y - (ay + t * vy)); }
+  function pip(r, x, y) { var ins = false; for (var i = 0, j = r.length - 2; i < r.length; j = i, i += 2) { var xi = r[i], yi = r[i + 1], xj = r[j], yj = r[j + 1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi) ins = !ins; } return ins; }
+  function ringDist(r, x, y) { var m = 1e9; for (var i = 0, j = r.length - 2; i < r.length; j = i, i += 2) { var d = ptSeg(x, y, r[j], r[j + 1], r[i], r[i + 1]); if (d < m) m = d; } return m; }
+  function locate(G, x, y) {
+    var idx = -1; for (var i = 0; i < G.length; i++) { var b = G[i].bbox, r = G[i].ringF; if (!r || !b) continue; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && pip(r, x, y)) { idx = i; break; } }
+    if (idx === cur && idx >= 0) return idx;
+    if (cur >= 0 && G[cur] && G[cur].ringF && idx !== cur) { if (ringDist(G[cur].ringF, x, y) < 50) return cur; }      /* 경계 근처에서는 이전 동 유지 */
+    if (idx >= 0) return idx;
+    var best = -1, bd = 1e9; for (var k = 0; k < G.length; k++) { var rr = G[k].ringF; if (!rr) continue; var bb = G[k].bbox; if (x < bb[0] - 400 || x > bb[2] + 400 || y < bb[1] - 400 || y > bb[3] + 400) continue; var dd = ringDist(rr, x, y); if (dd < bd) { bd = dd; best = k; } }
+    return bd <= 300 ? (cur >= 0 && G[cur] && G[cur].ringF && ringDist(G[cur].ringF, x, y) <= 300 ? cur : best) : -1;
+  }
+  function publish(name) {
+    window.__fmCurDong = name; try { document.dispatchEvent(new CustomEvent('fm-curdong', { detail: name })); } catch (e) { /* */ }
+    if (ext) { try { parent.postMessage({ type: 'vw-dong', name: name }, 'https://scity3d.blogspot.com'); } catch (e) { /* 부모 없음 */ } }
+  }
+  function tick() {
+    var sa = window.__sa; if (!sa || !sa.V || typeof window.__fmDongData !== 'function') return;
+    var G = window.__fmDongData(); if (!G || !G.length) return;
+    var walk = sa.S && sa.S.mode === 'walk' && sa.WK, x = walk ? sa.WK.x : sa.V.tx, y = walk ? sa.WK.y : -sa.V.tz; if (!isFinite(x) || !isFinite(y)) return;
+    var key = Math.round(x / 10) + ',' + Math.round(y / 10); if (key === lastKey && curName) return; lastKey = key;
+    var i = locate(G, x, y), name = i >= 0 ? G[i].name : '행복도시 밖'; cur = i;
+    if (name !== curName) { curName = name; publish(name); }
+  }
+  setInterval(function () { try { tick(); } catch (e) { /* 아직 준비 전 */ } }, 200);
+  /* 블로그가 늦게 열리거나 장면이 다시 불러와져도 현재 이름을 다시 알린다 */
+  window.addEventListener('message', function (e) { if (e.data && (e.data.type === 'vw-hello' || e.data.type === 'vw-set') && curName) publish(curName); });
 })();</script><!--/daystrip1--></body>
 </html>

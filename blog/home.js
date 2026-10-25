@@ -101,7 +101,7 @@
     stT.push(setTimeout(function () { note.textContent = '조금 오래 걸리네요. 처음 한 번만 그래요.'; }, 14000));
     stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); toast('지도가 늦어지고 있어요. 인터넷 연결을 확인하거나 다시 시도해 주세요.', { label: '다시 시도', fn: function () { if (cur) select(cur); } }); }, 30000));
   }
-  var VIEWER_V = '20261026k';
+  var VIEWER_V = '20261026l';
   function viewerUrl(name, hash) { var b = name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; return b + '?v=' + VIEWER_V + (hash || '#') + (hash ? '&' : '') + 'ext=1'; }
   function setSeg(state) {
     var on = state === 'on' || state === 'loading', auto = state === 'auto';
@@ -123,7 +123,7 @@
   }
   function select(name, hash, first) {
     if (!btns[name]) return;
-    var changed = cur !== name; cur = name;
+    var changed = cur !== name; cur = name; if (typeof locName !== 'undefined') locName = null;      /*curdong1*/
     order.forEach(function (k) { var on = k === name; btns[k].classList.toggle('on', on); btns[k].tabIndex = on ? 0 : -1; if (on) btns[k].setAttribute('aria-current', 'true'); else btns[k].removeAttribute('aria-current'); });
     moveInd(!first);
     var b = btns[name]; if (first) { var need = b.offsetLeft + b.offsetWidth + 12 - scroller.clientWidth; scroller.scrollLeft = need > 0 ? need : 0; } else if (scroller.scrollTo) scroller.scrollTo({ left: b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' }); else scroller.scrollLeft = b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2;
@@ -135,6 +135,16 @@
     try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
   }
 
+
+  /* curdong1: 지금 보는 위치의 동 이름(장면과 별개) */
+  var locName = null;
+  function showLoc(name) {
+    if (!name || typeof name !== 'string' || name === locName) return; locName = name;
+    nameEl.textContent = name; order.forEach(function (k) { var on = k === name; btns[k].classList.toggle('on', on); if (on) btns[k].setAttribute('aria-current', 'true'); else btns[k].removeAttribute('aria-current'); });
+    if (btns[name]) { var b = btns[name]; if (scroller.scrollTo) scroller.scrollTo({ left: b.offsetLeft - (scroller.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' }); moveInd(true); }
+    try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
+    if (typeof dpop !== 'undefined' && dpop && !dpop.hidden) dpopSet(true);
+  }
   /* chrome1: 전체 화면(같은 페이지) 토글 + 동 목록 팝오버 */
   var fsOn = false, pseudoFs = false, fsIn = fsBtn.innerHTML, fsOut = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
   function fsSync() {
@@ -157,15 +167,15 @@
   var dpop = el('div', 'bg-dpop'); dpop.hidden = true; dpop.setAttribute('role', 'listbox'); dpop.setAttribute('aria-label', '동 선택');
   DONGS.forEach(function (n) { var b = el('button', '', esc(n === '행복도시 전체' ? '전체' : n.replace(/동$/, ''))); b.type = 'button'; b.setAttribute('data-n', n); b.setAttribute('role', 'option'); b.addEventListener('click', function () { dpopSet(false); moved = true; select(n); }); dpop.appendChild(b); });
   stage.appendChild(dpop);
-  function dpopSet(on) { dpop.hidden = !on; nameEl.setAttribute('aria-expanded', on ? 'true' : 'false'); if (on) { [].forEach.call(dpop.children, function (b) { var c = b.getAttribute('data-n') === cur; b.classList.toggle('on', c); if (c) b.setAttribute('aria-selected', 'true'); else b.removeAttribute('aria-selected'); }); } }
+  function dpopSet(on) { dpop.hidden = !on; nameEl.setAttribute('aria-expanded', on ? 'true' : 'false'); if (on) { [].forEach.call(dpop.children, function (b) { var c = b.getAttribute('data-n') === (locName || cur); b.classList.toggle('on', c); if (c) b.setAttribute('aria-selected', 'true'); else b.removeAttribute('aria-selected'); }); } }
   nameEl.setAttribute('role', 'button'); nameEl.tabIndex = 0; nameEl.setAttribute('aria-haspopup', 'listbox'); nameEl.setAttribute('aria-expanded', 'false'); nameEl.title = '다른 동 고르기';
   nameEl.addEventListener('click', function () { dpopSet(dpop.hidden); });
   nameEl.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dpopSet(dpop.hidden); } });
   document.addEventListener('pointerdown', function (e) { if (!dpop.hidden && !dpop.contains(e.target) && e.target !== nameEl) dpopSet(false); }, true);
   shareBtn.addEventListener('click', function () {
-    var url = location.href.split('#')[0] + '#' + encodeURIComponent(cur || ''), t = (cur || '세종') + ' 3D 지도 · 볕결 세종';
+    var url = location.href.split('#')[0] + '#' + encodeURIComponent(locName || cur || ''), t = (locName || cur || '세종') + ' 3D 지도 · 볕결 세종';
     if (navigator.share) { navigator.share({ title: t, url: url }).catch(function () { /* 취소 */ }); return; }
-    var done = function () { toast('링크를 복사했어요 · ' + (cur || '')); };
+    var done = function () { toast('링크를 복사했어요 · ' + (locName || cur || '')); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { toast(url); }); else toast(url);
   });
   nav.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('.bg-chip') : null; if (!b) return; moved = true; select(b.getAttribute('data-n')); });
@@ -228,6 +238,7 @@
     if (t === 'vw-ready') { clearTimeout(readyT); readyT = setTimeout(function () { stages(false); }, 1200); }
     else if (t === 'vw-moved') moved = true;
     else if (t === 'vw-state') setSeg(e.data.state);
+    else if (t === 'vw-dong') showLoc(e.data.name);      /*curdong1*/
     else if (t === 'vw-view' && cur) { try { localStorage.setItem('hmLast', JSON.stringify({ n: cur, h: e.data.h, t: Date.now() })); } catch (x) { /* 저장 불가 */ } }
   });
 
