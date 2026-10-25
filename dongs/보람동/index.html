@@ -5969,12 +5969,6 @@ html:not([data-adv="1"]) #sun-panel .sun-hd{min-height:36px}
 #sun-panel #sun-qpanel .sun-bd{padding:6px 0 0}
 #sun-qpanel:not(.dc-in){display:none!important}
 
-/* 시계 칩: 패널이 닫힌 채 그림자/재생 중일 때만 작게 */
-html:not([data-adv="1"]) #sun-clock:not(.sun-hidden){display:block!important;min-width:0;padding:3px 40px 3px 10px;border-radius:999px;box-shadow:0 2px 10px rgba(30,40,15,.18)}
-html:not([data-adv="1"]) #sun-clock:not(.sun-hidden):not(.fm-moved){top:10px!important;right:10px!important}
-html:not([data-adv="1"]) #sun-clock.fm-moved:not(.sun-hidden){right:auto!important;width:auto!important;max-width:200px}
-#sun-clock .sun-ck-d,#sun-clock .sun-ck-sub{display:none!important}
-#sun-clock .sun-ck-b{width:28px;height:28px;right:3px;top:50%;margin-top:-14px;font-size:12px}
 @media (max-width:720px) and (orientation:portrait){
 html:not([data-adv="1"]) #sun-panel,html:not([data-adv="1"]) #sun-panel.dc-more{left:8px!important;right:8px!important;width:auto!important;top:auto!important;bottom:calc(var(--fh,26px) + 62px)!important;max-height:min(40vh,300px)!important}
 }
@@ -6177,5 +6171,126 @@ html:not([data-adv="1"]) #sun-panel .sun-hd .sun-x{min-width:30px!important;min-
       build(); addEventListener('resize', upd);
     } else if (n > 1500) clearInterval(iv);
   }, 200);
-})();</script><!--/wmark1--></body>
+})();</script><!--/wmark1--><!--daystrip1--><style id="daystrip1">/* daystrip1: 하루 스트립(높이 28px 고정) + 구 시계 칩·▶ 하루 버튼 폐지 */
+html body #sun-clock,html body.hideall #sun-clock,html body #sun-clock:not(.sun-hidden){display:none!important}
+html #fmDayCore,html #topbar>#fmDayCore{display:none!important}
+#ds1{position:fixed;width:264px;left:50%;transform:translateX(-50%);bottom:44px;z-index:5;height:28px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 4px 0 2px;max-width:calc(100vw - 16px);border-radius:14px;background:var(--glass-solid,rgba(255,250,240,.94));color:var(--tx,#2b2a22);border:1px solid var(--line2,rgba(60,50,20,.22));box-shadow:0 2px 10px rgba(30,40,15,.2);font:10.5px/1 var(--font,system-ui,'Malgun Gothic',sans-serif);user-select:none;-webkit-user-select:none}
+#ds1[hidden]{display:none}
+body.fm-window #ds1,body.hideall #ds1{display:none}
+#ds1.ds-phone{left:8px;transform:none}
+#ds1 button{position:relative;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#ds1 button::before{content:"";position:absolute;left:-10px;right:-10px;top:-9px;bottom:-9px}
+#ds1 .ds-p{width:24px;height:24px;border-radius:50%;background:#7a6a1c;display:grid;place-items:center;flex:none}
+#ds1 .ds-p i{display:block;width:0;height:0;border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+#ds1 .ds-p.pause i{width:8px;height:10px;border:0;margin:0;border-left:3px solid #fff;border-right:3px solid #fff;box-sizing:border-box}
+#ds1 .ds-rs{flex:none;font-size:10.5px;font-variant-numeric:tabular-nums;color:inherit;opacity:.92;white-space:nowrap}
+#ds1 .ds-tr{position:relative;flex:1 1 60px;min-width:44px;height:24px;cursor:pointer;touch-action:none;outline:none}
+#ds1 .ds-tr::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
+#ds1 .ds-bar{position:absolute;left:0;right:0;top:10px;height:4px;border-radius:2px;background:linear-gradient(90deg,#f4a259,#ffd978 18%,#ffe08a 82%,#f4a259)}
+#ds1 .ds-dot{position:absolute;top:12px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;border:3px solid #e8892a;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+#ds1 .ds-dot.night{border-color:#52618a;background:#dfe5f5}
+#ds1 .ds-tr:focus-visible .ds-dot,#ds1 button:focus-visible{outline:2px solid var(--acc,#1f55b5);outline-offset:1px}
+#ds1 .ds-bub{display:none;position:absolute;bottom:22px;left:var(--bx,50%);transform:translateX(-50%);padding:3px 6px;border-radius:6px;background:#2b2a22;color:#fff;font-size:11px;white-space:nowrap;pointer-events:none}
+#ds1.ds-live .ds-bub,#ds1 .ds-tr:hover .ds-bub,#ds1 .ds-tr:focus-visible .ds-bub{display:block}
+#ds1 .ds-c,#ds1 .ds-m{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:13px;color:inherit}
+#ds1 .ds-c:hover,#ds1 .ds-m:hover,#ds1 .ds-c.on{background:rgba(120,100,30,.16)}
+#ds1 .ds-pop{position:absolute;bottom:34px;right:0;display:flex;gap:2px;padding:4px;border-radius:12px;background:var(--glass-solid,#fffaf0);border:1px solid var(--line2,rgba(60,50,20,.22));box-shadow:0 3px 12px rgba(30,40,15,.25)}
+#ds1 .ds-pop[hidden]{display:none}
+#ds1 .ds-pop button{height:28px;padding:0 9px;border-radius:14px;font-size:12px}
+#ds1 .ds-pop button:hover{background:rgba(120,100,30,.16)}
+@media (max-width:420px){#ds1 .ds-rs{font-size:10px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
+   엔진(sun.js)은 그대로: SUN.state(min/doy/playing/paused/shadow), SUN.setTime/setDate, 패널 안 숨은 버튼(#sun-pd/#sun-pp/#sun-sh/#sun-now/[data-p])을 대리 조작한다.
+   declutter1·wmark1 뒤 마지막에 주입. 큰 패널은 ⌄ 로만 연다. */
+(function () {
+  if (window.__ds1) return; window.__ds1 = 1;
+  var d = document, de = d.documentElement, $ = function (i) { return d.getElementById(i); };
+  var strip = null, open = false, userOff = false, selfSh = false, drag = false, raf = 0, calOpen = false, idleTm = 0, wasPlaying = false, last = '';
+  var el = {};
+  function SUN() { try { return window.__sa && window.__sa.SUN(); } catch (e) { return null; } }
+  function st() { var s = SUN(); return s && s.state; }
+  function hhmm(m) { m = Math.round(m); m = ((m % 1440) + 1440) % 1440; var h = Math.floor(m / 60), n = m % 60; return (h < 10 ? '0' : '') + h + ':' + (n < 10 ? '0' : '') + n; }
+  function parseHM(t) { var m = /(\d{1,2}):(\d\d)/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function riseSet() { var r = $('sun-read'), b = r ? r.querySelectorAll('b') : []; var a = b[1] ? parseHM(b[1].textContent) : null, z = b[2] ? parseHM(b[2].textContent) : null; return [a, z]; }
+  function dateTxt(S) { try { var base = new Date(Date.UTC(2025, 0, 1)); base.setUTCDate(S.doy); return (base.getUTCMonth() + 1) + '/' + base.getUTCDate(); } catch (e) { return ''; } }
+  function click(id) { var e = $(id); if (e) e.click(); }
+
+  function build() {
+    if (strip) return; strip = d.createElement('div'); strip.id = 'ds1'; strip.setAttribute('role', 'group'); strip.setAttribute('aria-label', '하루 스트립: 일출부터 일몰까지 햇빛 시각');
+    strip.hidden = true;
+    strip.innerHTML = '<button type="button" class="ds-p" aria-label="하루 재생"><i></i></button>' +
+      '<span class="ds-rs ds-r" id="ds1r">일출 --:--</span>' +
+      '<div class="ds-tr" role="slider" tabindex="0" aria-label="시각 (왼쪽·오른쪽 화살표로 5분씩)" aria-valuemin="0" aria-valuemax="1440"><span class="ds-bar"></span><span class="ds-dot"></span><span class="ds-bub"></span></div>' +
+      '<span class="ds-rs ds-s" id="ds1s">일몰 --:--</span>' +
+      '<button type="button" class="ds-c" aria-label="날짜 고르기" aria-expanded="false"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.8v2.6M10.5 1.8v2.6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>' +
+      '<button type="button" class="ds-m" aria-label="일조 상세 패널 열기" aria-expanded="false">⌄</button>' +
+      '<div class="ds-pop" role="group" aria-label="날짜" hidden><button type="button" data-p="12-21">동지</button><button type="button" data-p="3-20">춘분</button><button type="button" data-p="6-21">하지</button><button type="button" data-p="9-23">추분</button><button type="button" data-now="1">지금</button></div>';
+    d.body.appendChild(strip);
+    el.p = strip.querySelector('.ds-p'); el.tr = strip.querySelector('.ds-tr'); el.dot = strip.querySelector('.ds-dot'); el.bub = strip.querySelector('.ds-bub'); el.bar = strip.querySelector('.ds-bar');
+    el.r = $('ds1r'); el.s = $('ds1s'); el.c = strip.querySelector('.ds-c'); el.m = strip.querySelector('.ds-m'); el.pop = strip.querySelector('.ds-pop');
+    el.p.addEventListener('click', function () { var S = st(); if (!S) return; if (!S.playing) click('sun-pd'); else click('sun-pp'); tick(true); });
+    function range() { var rs = riseSet(); return (rs[0] == null || rs[1] == null) ? [0, 1440] : rs; }
+    function setFromX(cx) { var r = el.tr.getBoundingClientRect(), g = range(), f = Math.max(0, Math.min(1, (cx - r.left) / Math.max(1, r.width))); var m = Math.round((g[0] + f * (g[1] - g[0])) / 5) * 5; var s = SUN(); if (s && s.setTime) s.setTime(m / 60); tick(true); }
+    function pauseIfPlaying() { var S = st(); if (S && S.playing && !S.paused) click('sun-pp'); }
+    el.tr.addEventListener('pointerdown', function (e) { drag = true; pauseIfPlaying(); try { el.tr.setPointerCapture(e.pointerId); } catch (x) { /* */ } setFromX(e.clientX); e.preventDefault(); });
+    el.tr.addEventListener('pointermove', function (e) { if (drag) setFromX(e.clientX); });
+    ['pointerup', 'pointercancel'].forEach(function (n) { el.tr.addEventListener(n, function () { drag = false; tick(true); }); });
+    el.tr.addEventListener('keydown', function (e) {
+      var S = st(), s = SUN(); if (!S || !s) return; var g = range(), dm = 0, m = S.min;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') dm = -5; else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') dm = 5; else if (e.key === 'Home') m = g[0]; else if (e.key === 'End') m = g[1]; else if (e.key === ' ') { e.preventDefault(); el.p.click(); return; } else return;
+      e.preventDefault(); pauseIfPlaying(); s.setTime(((m + dm + 1440) % 1440) / 60); tick(true);
+    });
+    el.c.addEventListener('click', function () { setCal(!calOpen); });
+    el.pop.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('button'); if (!b) return; if (b.dataset.now) click('sun-now'); else { var q = d.querySelector('#sun-panel [data-p="' + b.dataset.p + '"]'); if (q) q.click(); else { var a = b.dataset.p.split('-'), s = SUN(); if (s && s.setDate) s.setDate(+a[0], +a[1]); } } setCal(false); tick(true); });
+    el.m.addEventListener('click', function () { var s = SUN(), pn = $('sun-panel'); if (!s) return; var vis = pn && !pn.classList.contains('sun-hidden'); if (vis) { if (s.close) s.close(); } else if (s.open) s.open(); setTimeout(function () { tick(true); }, 60); });
+    d.addEventListener('keydown', function (e) { if (e.key === 'Escape' && calOpen) { setCal(false); } });
+    d.addEventListener('pointerdown', function (e) { if (calOpen && strip && !strip.contains(e.target)) setCal(false); }, true);
+  }
+  function setCal(v) { calOpen = !!v; el.pop.hidden = !calOpen; el.c.setAttribute('aria-expanded', String(calOpen)); el.c.classList.toggle('on', calOpen); }
+
+  function place() {
+    if (!strip || strip.hidden) return;
+    var phone = matchMedia('(max-width:720px),(max-height:620px)').matches, H = innerHeight, top = H;
+    ['footer', 'timebar'].forEach(function (id) { var e = $(id); if (e && e.getClientRects().length) { var r = e.getBoundingClientRect(); if (r.height > 4 && r.top > H * 0.4) top = Math.min(top, r.top); } });
+    if (phone) { var tb = $('topbar'); if (tb) { var r2 = tb.getBoundingClientRect(); if (r2.height > 4 && r2.top > H * 0.5) top = Math.min(top, r2.top); } }
+    strip.style.bottom = Math.max(4, H - top + 8) + 'px';
+    strip.classList.toggle('ds-phone', phone);
+  }
+  function tick(force) {
+    if (!open || !strip) return; var S = st(); if (!S) return;
+    var rs = riseSet(), a = rs[0], z = rs[1], g = (a == null || z == null) ? [0, 1440] : [a, z], m = S.min % 1440, f = Math.max(0, Math.min(1, (m - g[0]) / Math.max(1, g[1] - g[0])));
+    var day = m >= g[0] && m <= g[1], playing = !!S.playing && !S.paused, key = [m | 0, S.doy, !!S.playing, !!S.paused, a, z, day, drag].join();
+    if (key !== last || force) {
+      last = key;
+      el.dot.style.left = (f * 100).toFixed(1) + '%'; el.bub.style.left = (f * 100).toFixed(1) + '%'; el.dot.classList.toggle('night', !day);
+      el.r.textContent = '일출 ' + (a == null ? '--:--' : hhmm(a)); el.s.textContent = '일몰 ' + (z == null ? '--:--' : hhmm(z));
+      var tx = dateTxt(S) + ' ' + hhmm(m) + (day ? '' : ' (해 없음)');
+      el.bub.textContent = tx; el.tr.setAttribute('aria-valuenow', String(Math.round(m))); el.tr.setAttribute('aria-valuetext', tx);
+      el.p.classList.toggle('pause', playing); el.p.setAttribute('aria-label', playing ? '일시정지' : (S.playing ? '계속 재생' : '하루 재생')); el.p.title = el.p.getAttribute('aria-label');
+      strip.classList.toggle('ds-live', playing || drag); el.c.title = '날짜 ' + dateTxt(S);
+      var pn = $('sun-panel'), vis = pn && !pn.classList.contains('sun-hidden'); el.m.setAttribute('aria-expanded', String(!!vis)); el.m.textContent = vis ? '⌃' : '⌄';
+    }
+    // 재생이 끝난 뒤 가만히 두면 접힘
+    if (wasPlaying && !S.playing) { clearTimeout(idleTm); idleTm = setTimeout(function () { if (open && !drag && !calOpen && !strip.matches(':hover') && !strip.contains(d.activeElement) && !(st() || {}).playing) setOpen(false); }, 8000); }
+    wasPlaying = !!S.playing; place();
+  }
+  function loop() { raf = 0; if (!open) return; tick(false); raf = requestAnimationFrame(loop); }
+  function setOpen(v) {
+    build(); open = !!v; strip.hidden = !open; var core = $('fmSunCore'); if (core) { core.classList.toggle('on', open); core.setAttribute('aria-pressed', String(open)); }
+    if (open) {
+      var sh = $('sun-sh'); if (sh && !sh.checked && !userOff) { selfSh = true; sh.click(); selfSh = false; }
+      last = ''; wasPlaying = false; tick(true); if (!raf) raf = requestAnimationFrame(loop);
+    } else { setCal(false); clearTimeout(idleTm); }
+  }
+  window.__fmDayStrip = { open: function () { setOpen(true); }, close: function () { setOpen(false); }, toggle: function () { setOpen(!open); }, isOpen: function () { return open; } };
+
+  function hook() {
+    var core = $('fmSunCore'); if (!core || core.__ds) return !!core && !!core.__ds; core.__ds = 1;
+    var sh = $('sun-sh'); if (sh) sh.addEventListener('change', function () { if (!selfSh) userOff = !sh.checked; });
+    core.addEventListener('click', function (e) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(!open); }, true);
+    core.setAttribute('aria-label', '일조 · 하루 그림자 스트립 열기/닫기'); core.title = '햇빛 시각을 하루 스트립으로 보고 재생합니다 (다시 누르면 접힘)'; core.setAttribute('aria-pressed', 'false');
+    return true;
+  }
+  var n = 0, iv = setInterval(function () { if (hook() || ++n > 400) clearInterval(iv); }, 150);
+  addEventListener('resize', place);
+})();</script><!--/daystrip1--></body>
 </html>
