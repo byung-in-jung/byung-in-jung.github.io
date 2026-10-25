@@ -4135,6 +4135,22 @@ function showCtxBuilding(cb) {
   const bw = document.getElementById('cbWin'); if (bw) bw.addEventListener('click', () => { SUN.showBuilding(id); SUN.windowView(id); });
   window.__fmCardB = null; if (SUN) { try { SUN.showBuilding(id); } catch (e) { /* 강조 없음 */ } }
 }
+
+/*visible1*/
+let ALLG = null;
+function bldAtAny(x, y, z) {      // 위성 화면에서 누른 점에 가장 가까운 건물(동 안·이웃 동 모두, 윤곽 3 m 이내, 높이 범위 안)
+  if (!ALLG) { const Q = SUN && SUN.getQ && SUN.getQ(); if (!Q) return null; const g = new Map(), C = 100; for (const b of Q.buildings) { const bb = b.bbox; if (!bb) continue; for (let cx = Math.floor(bb[0] / C); cx <= Math.floor(bb[2] / C); cx++) for (let cy = Math.floor(bb[1] / C); cy <= Math.floor(bb[3] / C); cy++) { const k = cx * 100003 + cy; (g.get(k) || g.set(k, []).get(k)).push(b); } } ALLG = { g, C }; }
+  const l = ALLG.g.get(Math.floor(x / ALLG.C) * 100003 + Math.floor(y / ALLG.C)); if (!l) return null; let best = null, bd = 3;
+  for (const b of l) {
+    if (z < b.z0 - 4 || z > b.z1 + 4) continue; const R = b.ring; let ins = false, md = 1e9;
+    for (let i = 0, j = R.length - 1; i < R.length; j = i++) {
+      const xi = R[i][0], yi = R[i][1], xj = R[j][0], yj = R[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi) ins = !ins;
+      const vx = xi - xj, vy = yi - yj, L2 = vx * vx + vy * vy, t = L2 ? Math.max(0, Math.min(1, ((x - xj) * vx + (y - yj) * vy) / L2)) : 0, dd = Math.hypot(x - (xj + t * vx), y - (yj + t * vy)); if (dd < md) md = dd;
+    }
+    const d = ins ? 0 : md; if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
 function pick(cx, cy) {
   if (window.__fmPointMode) return;      // 일조 '지점 선택' 모드: 클릭은 지점 평가에 쓰이고 카드는 열지 않는다
   ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
@@ -4989,7 +5005,7 @@ function nbApply() {
   const sunT = typeof SUNSH !== 'undefined' && SUNSH.on;   // 일조·그림자: 실시간 그림자가 켜져 있으면 먼 산이 그림자를 드리우도록 광역 지형을 '그림자 전용'(색·깊이 쓰기 끔)으로 둔다
   if (maxc >= 2 || sunT) nbBuildTerrain();
   if (nbTerrMesh) { const vis = maxc >= 2; nbTerrMesh.visible = vis || sunT; nbTerrMesh.material.colorWrite = vis; nbTerrMesh.material.depthWrite = vis; }
-  NBDG.forEach((d, i) => { if (i === 0) return; const on = nbShown(i); if (on) nbBuildDong(i); if (nbBld[i]) nbBld[i].visible = on; });
+  NBDG.forEach((d, i) => { if (i === 0) return; const on = nbShown(i), bon = NBS.mode !== 'off' && NBS.on[i] !== false; if (bon) nbBuildDong(i); if (nbBld[i]) nbBld[i].visible = bon; /*visible1: 먼 동 건물도 보이게(그림자·클릭 대상)*/ });
   nbRecolor();
   NBDG.forEach((d, i) => { if (d.cls === 1 && i > 0) { const on = nbShown(i); if (on) nbDongGroup(i); if (nbDongGroups[i]) nbDongGroups[i].visible = on; } });
   nbOutlines(); nbRenderMenu();
@@ -5223,7 +5239,7 @@ const VWO = (() => {
     if (sn) { if (sn.touched === false) fmToast('덮기 전 위치 그대로예요.'); else back(sn); }      // 브이월드를 손으로 움직이지 않았으면 우리 카메라는 건드리지 않는다(켜기 전 위치 그대로). 안 움직였는데도 브이월드 값으로 옮기면 지면 어긋남·낮은 시점에서 수십 m 이동이 생겼다(R6-8)
   }
   function snap() { return new Promise((res) => { const id = ++st.snapId; st.snaps[id] = res; send({ t: 'get', id }); setTimeout(() => { if (st.snaps[id]) { delete st.snaps[id]; res(null); } }, 1500); }); }
-  function back(sn) {      // 브이월드 카메라 -> 우리 카메라
+  function back(sn, quiet) {      // 브이월드 카메라 -> 우리 카메라
     const [x, y] = toXY(sn.lon, sn.lat), gr = hAt(x, y);
     if (sn.g != null) st.offs = sn.g - gr;
     const z = sn.agl != null ? gr + Math.max(0.5, sn.agl) : sn.h - st.offs, hd = sn.heading / R2D, pt = (sn.pitch - (st.dp || 0)) / R2D;
@@ -5231,14 +5247,14 @@ const VWO = (() => {
     if (S.mode === 'walk') {
       WK.x = x; WK.y = y; WK.yaw = -hd; WK.pitch = clamp(pt, -1.4, 1.4); if (WK.zAbs != null) WK.zAbs = z;
       if (WK.lock) { WK.yaw = clamp(WK.yaw, WIN.yaw0 - 1.5, WIN.yaw0 + 1.5); WK.pitch = clamp(WK.pitch, -0.6, 0.6); }
-      fmToast('브이월드에서 본 위치로 돌아왔어요.'); return;
+      if (!quiet) fmToast('브이월드에서 본 위치로 돌아왔어요.'); return;
     }
     const fwd = new THREE.Vector3(Math.sin(hd) * Math.cos(pt), Math.sin(pt), -Math.cos(hd) * Math.cos(pt)), pos = new THREE.Vector3(x, z, -y);
     V.yaw = -hd; V.pitch = clamp(-pt, 0.04, Math.PI / 2);
     let d = 0, lo = 0, hi = -1; for (let t = 4; t <= 9000; t *= 1.08) { const q = pos.clone().addScaledVector(fwd, t); if (q.y <= hAt(q.x, -q.z)) { hi = t; break; } lo = t; }
     if (hi > 0) { for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2, q = pos.clone().addScaledVector(fwd, m); if (q.y <= hAt(q.x, -q.z)) hi = m; else lo = m; } d = hi; } else d = 300;
     const tg = pos.clone().addScaledVector(fwd, d); V.tx = tg.x; V.tz = tg.z; V.ty = hi > 0 ? hAt(tg.x, -tg.z) : tg.y; V.dist = clamp(d / orthoK().k, 25, 9000);
-    fmToast('브이월드에서 본 위치로 돌아왔어요.');
+    if (!quiet) fmToast('브이월드에서 본 위치로 돌아왔어요.');
   }
   window.addEventListener('message', (e) => {
     const m = e.data; if (e.origin !== location.origin || !m || !m.vwo || !st.fr || e.source !== st.fr.contentWindow) return;
@@ -5247,7 +5263,8 @@ const VWO = (() => {
     else if (m.t === 'look') { if (WIN.on && WK.lock) { WK.yaw = clamp(WK.yaw + m.dx * 0.004, WIN.yaw0 - 1.5, WIN.yaw0 + 1.5); WK.pitch = clamp(WK.pitch + m.dy * 0.004, -0.6, 0.6); } }      // 창가 시점에서 브이월드 화면을 끌면 우리 창가 시선이 돌고(같은 제한: 좌우 ±1.5 rad, 상하 ±0.6), 아래 동기화 루프가 브이월드에 다시 반영
     else if (m.t === 'wheel') { const fi = document.querySelector('#wvCard .wv-fov'); if (WIN.on && fi) { fi.value = String(clamp(+fi.value + (m.dy > 0 ? 3 : -3), +fi.min || 60, +fi.max || 95)); fi.dispatchEvent(new Event('input', { bubbles: true })); } }      // 휠 = 화각(조망 카드의 '시야 폭'과 같은 값)
     else if (m.t === 'esc') { if (WIN.on) windowViewEnd(); else if (st.on) turnOff(); }
-    else if (m.t === 'pick') { if (st.on && st.state === 'on') wallPick(m.pick); }
+    else if (m.t === 'pick') { if (st.on && st.state === 'on') { if (m.plain) satPick(m.pick); else wallPick(m.pick); } }
+    else if (m.t === 'csync') { if (st.on && st.state === 'on' && !(typeof WIN !== 'undefined' && WIN.on) && m.sn) { try { back(m.sn, true); } catch (e) { /* 다음 메시지에 다시 맞춘다 */ } } }      /*sync1: 위성을 돌리는 동안 우리 카메라가 따라간다*/
     else if (m.t === 'shack') shAck(m);
     else if (m.t === 'done') { if (st.on) loaded(); }
     else if (m.t === 'error') { if (st.on || st.state === 'loading') fail(m.code); }
@@ -5267,9 +5284,17 @@ const VWO = (() => {
   // ---- 창가 클릭 × 덮기: 브이월드 화면에서 누른 지점 -> 우리 건물 벽에 스냅 -> 창가 시점. 창가 시점 중엔 브이월드 카메라도 같은 자리·방향.
   const wcSend = () => send({ t: 'wc', on: !!window.__fmWinClick });
   if (window.__fmSetWinClick) { const o0 = window.__fmSetWinClick; window.__fmSetWinClick = (on, q) => { o0(on, q); wcSend(); }; }
+  let CTXB = null;      /*visible1*/
+  function allBld() { if (!CTXB) { const Q = SUN && SUN.getQ && SUN.getQ(); if (!Q) return D.bld; CTXB = []; for (const q of Q.buildings) { if (!q.ctx) continue; const f = []; for (const p of q.ring) f.push(Math.round(p[0] * 10), Math.round(p[1] * 10)); CTXB.push([q.id, q.z1 - q.z0, 0, 0, f]); } } return D.bld.concat(CTXB); }
+  function satPick(p) {      /*visible1: 위성 화면에서 짧게 누른 건물 -> 일조 카드*/
+    const pk = p && p.pk; if (!pk || window.__fmWinClick || (typeof WIN !== 'undefined' && WIN.on) || window.__fmPointMode) return;
+    const [x, y] = toXY(pk.lon, pk.lat), z = hAt(x, y) + (pk.agl != null ? pk.agl : 0), cb = bldAtAny(x, y, z);
+    if (!cb) { try { closeCard(); } catch (e) { /* */ } return; }
+    if (cb.ctx) showCtxBuilding(cb); else { const bb = D.bld.find((q) => q[0] === cb.id); if (bb) showBuilding(bb); }
+  }
   function wallSnap(x, y, z0) {      // 가장 가까운 우리 건물 벽(수평 거리) -> {id, x, y, nx, ny, d}
     let best = null;
-    for (const b of D.bld) {
+    for (const b of allBld()) {
       const r = b[4]; if (!r || r.length < 6 || !(b[1] > 3)) continue; const n = r.length / 2; let ar = 0;
       for (let i = 0; i < n; i++) { const j = (i + 1) % n; ar += r[2 * i] * r[2 * j + 1] - r[2 * j] * r[2 * i + 1]; }
       for (let i = 0; i < n; i++) {
@@ -5283,7 +5308,7 @@ const VWO = (() => {
   let FP = null;      // 건물 발자국(m) 캐시: 시선 추적용
   function footprints() {
     if (FP) return FP; FP = [];
-    for (const b of D.bld) {
+    for (const b of allBld()) {
       const r = b[4]; if (!r || r.length < 6 || !(b[1] > 3)) continue; const pts = []; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, cx = 0, cy = 0;
       for (let i = 0; i < r.length; i += 2) { const x = r[i] / 10, y = r[i + 1] / 10; pts.push([x, y]); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); cx += x; cy += y; }
       FP.push({ id: b[0], pts, x0, y0, x1, y1, h: b[1], top: hAt(cx / pts.length, cy / pts.length) + b[1] });
@@ -5353,12 +5378,18 @@ const VWO = (() => {
   const SHENABLE = true;
   const SH = { en: false, on: false, str: 60, lastKey: '', busy: false, seq: 0, cms: [], applyMs: [], area: null, zmax: null, zmin: null, last: 0, eng: false, slowR: 0, minGap: 150, minGapFloor: 150, info: null, manual: false, lastS: undefined, hideWin: false, sent: 0, sentAt: 0, ack: null, vol: true, self: false, volIn: 1.0, volOut: -1.0, volUp: 0.5, volMinAlt: 3, volMinH: 6, volGap: 400, volCap: 25000, simp: 0, slow: 0, fast: 0, volInfo: null, lowres: false, tmCell0: 16, lastVol: 0, vms: [], vack: null, og: false };
   const shBtn = $('bVwSh'), shSl = $('vwShSlider');
-  function shScopeM() { try { return matchMedia('(pointer:coarse)').matches ? 700 : 1200; } catch (e) { return 1200; } }      /*shadowscope1*/
+  function shScopeM() { try { return matchMedia('(pointer:coarse)').matches ? 200 : 300; } catch (e) { return 300; } }      /*shadowscope1*/
   function shScopeSide() { try { return matchMedia('(pointer:coarse)').matches ? 4200 : 6000; } catch (e) { return 6000; } }      /*shadowscope1*/
   function shVolCap() { let c = 40000; try { if (matchMedia('(pointer:coarse)').matches) c = 18000; const fs = window.__sa && window.__sa.frameStats && window.__sa.frameStats(); if (fs && fs.n > 30 && fs.p95 > 150) c = Math.min(c, 12500); } catch (e) { /* 기본값 */ } return c; }      /*shadowscope1: 쐐기 정점 상한(적응형)*/
+  function shViewRing() {      /*visible1: 그림자 영역 = 시점 중심 정사각형(250 m 격자에 맞춤)*/
+    const V0 = window.__V, S0 = (() => { try { return matchMedia('(pointer:coarse)').matches ? 2600 : 3500; } catch (e) { return 3500; } })(); let cx, cy;
+    if (V0 && isFinite(V0.tx)) { cx = Math.round(V0.tx / 250) * 250; cy = Math.round(-V0.tz / 250) * 250; } else { const dr = f10(D.dong); let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (let i = 0; i < dr.length; i += 2) { a = Math.min(a, dr[i]); c = Math.max(c, dr[i]); b = Math.min(b, dr[i + 1]); d = Math.max(d, dr[i + 1]); } cx = (a + c) / 2; cy = (b + d) / 2; }
+    SH.acx = cx; SH.acy = cy; const h = S0 / 2; return [cx - h, cy - h, cx + h, cy - h, cx + h, cy + h, cx - h, cy + h];
+  }
+  function shAreaStale() { const V0 = window.__V; return !!(V0 && SH.area && isFinite(SH.acx) && Math.hypot(V0.tx - SH.acx, -V0.tz - SH.acy) > 900); }
   function shArea() {      // 새롬동 영역(동 경계 bbox + 150 m): 그림자를 만들 곳. 캔버스는 이 영역 전체
     if (SH.area) return SH.area;
-    const dr = f10(D.dong); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    const dr = shViewRing(); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     for (let i = 0; i < dr.length; i += 2) { x0 = Math.min(x0, dr[i]); x1 = Math.max(x1, dr[i]); y0 = Math.min(y0, dr[i + 1]); y1 = Math.max(y1, dr[i + 1]); }
     const M = 150, SCM = Math.max(0, Math.min(shScopeM(), (shScopeSide() - Math.max(x1 - x0, y1 - y0)) / 2)); x0 -= SCM; y0 -= SCM; x1 += SCM; y1 += SCM; /*shadowscope1: 동 경계 + 주변 맥락 건물까지*/
     // 동 경계가 강·산을 크게 품은 동(나성동은 7.2 x 3.9 km)은 캔버스 해상도가 거칠어지므로(2.4 m/px), 건물이 있는 범위 + 150 m 로 줄인다(그림자는 건물에서만 생기고 지형 그림자는 건물 쪽에서만 보인다). 건물이 없으면 동 경계 그대로.
@@ -5454,7 +5485,7 @@ const VWO = (() => {
   function shSend(force) {
     if (!SHENABLE || !SH.en || !SUN || !st.fr || !st.ready || st.state !== 'on') return;
     const S = SUN.state, on = SH.on && !(SH.hideWin && typeof WIN !== 'undefined' && WIN.on), sn = shSun(); SH.lowres = !!S.playing; const key = [on ? 1 : 0, SH.str, SH.eng ? 1 : 0, SH.self ? 1 : 0, SH.lowres ? 1 : 0, SH.simp, Math.round(sn.alt / 0.05), Math.round(sn.az / 0.05), S.kd.month, S.kd.day, S.kmin].join(',');
-    if (!force && key === SH.lastKey) return; SH.lastKey = key;
+    if (SH.area && shAreaStale()) { SH.area = null; SH.og = false; SH.tmKey = null; force = true; } if (!force && key === SH.lastKey) return; SH.lastKey = key;      /*visible1*/
     const t0 = performance.now(), A = shArea(); let c = null;
     if (on) { try { c = shCompute(); } catch (e) { console.warn('[그림자 덮기] 계산 오류', e && e.message); c = null; } }
     const cms = performance.now() - t0, seq = ++SH.seq;

@@ -103,15 +103,18 @@ function ready() {
   // 사용자가 이 화면을 직접 움직이면 지형이 늦게 와도 카메라를 다시 맞추지 않는다
   let dn = null;
   const cv = V.scene.canvas; ['wheel', 'keydown'].forEach((e) => cv.addEventListener(e, () => { touched = true; }, { passive: true }));
-  cv.addEventListener('pointermove', (e) => { if (e.buttons && dn && Math.hypot(e.clientX - dn.x, e.clientY - dn.y) > 6) touched = true; }, { passive: true });      // 짧은 클릭(창가 클릭)은 카메라를 만진 것으로 치지 않는다
+  cv.addEventListener('pointermove', (e) => { if (e.buttons && dn && Math.hypot(e.clientX - dn.x, e.clientY - dn.y) > 6) touched = true; }, { passive: true });
+  /*sync1*/ { let lastS = 0, tm = 0, lk = '';
+    const rep = () => { tm = 0; if (!touched || lockLook) return; const c = V.camera, k = [c.positionWC.x, c.positionWC.y, c.positionWC.z, c.heading, c.pitch].map((v) => v.toFixed(4)).join(); if (k === lk) return; lk = k; lastS = performance.now(); say({ t: 'csync', sn: snapshot() }); };
+    V.scene.postRender.addEventListener(() => { if (!touched || lockLook) return; const n = performance.now(); if (n - lastS >= 50) rep(); else if (!tm) tm = setTimeout(rep, 70); }); }      // 짧은 클릭(창가 클릭)은 카메라를 만진 것으로 치지 않는다
   // 창가 클릭: 짧게 눌렀을 때(드래그 아님) 그 점의 3D 위치·면 방향을 부모에 알린다(부모가 우리 건물 벽에 맞춘다)
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') say({ t: 'esc' }); });      // 키보드 초점이 이 창에 있어도 Esc 를 부모에 전달
   cv.addEventListener('pointerdown', (e) => { dn = { x: e.clientX, y: e.clientY, t: performance.now(), lx: e.clientX, ly: e.clientY, id: e.pointerId }; }, { passive: true });
   // 창가 시점(잠금): 끌기는 엔진 카메라가 아니라 부모의 창가 시선을 돌린다(부모가 돌린 값을 다시 'cam' 으로 보내 준다)
   cv.addEventListener('pointermove', (e) => { if (lockLook && dn && e.buttons && e.pointerId === dn.id) { say({ t: 'look', dx: e.clientX - dn.lx, dy: e.clientY - dn.ly }); dn.lx = e.clientX; dn.ly = e.clientY; } }, { passive: true });
   cv.addEventListener('pointerup', (e) => {
-    if (!wc || !dn) return; const mv = Math.hypot(e.clientX - dn.x, e.clientY - dn.y), dt = performance.now() - dn.t; dn = null;
-    if (mv > 6 || dt > 700) return; say({ t: 'pick', pick: rayAt(e.clientX, e.clientY) });
+    if (!dn) return; const mv = Math.hypot(e.clientX - dn.x, e.clientY - dn.y), dt = performance.now() - dn.t; dn = null;
+    if (mv > 6 || dt > 700) return; say({ t: 'pick', pick: rayAt(e.clientX, e.clientY), plain: !wc });
   }, { passive: true });
   cv.addEventListener('wheel', (e) => { if (lockLook) { e.preventDefault(); say({ t: 'wheel', dy: e.deltaY }); } }, { passive: false });      // 창가 시점(잠금): 휠은 화각만 바꾼다(부모가 처리)
   // 지형 높이가 처음엔 비어 있어 AGL 이 틀어질 수 있다: 지형 타일이 오면 한 번씩 다시 맞춘다(건드리기 전까지)
