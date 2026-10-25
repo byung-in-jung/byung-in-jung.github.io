@@ -55,9 +55,10 @@
     '<div class="bg-id"><span class="bg-name">—</span><span class="bg-sep" aria-hidden="true"></span>' +
     '<div class="bg-seg loading" role="group" aria-label="지도 종류"><button type="button" data-v="map" aria-pressed="false">지도</button><button type="button" data-v="sat" aria-pressed="true"><i class="sp" aria-hidden="true"></i>위성</button></div><span class="bg-sep" aria-hidden="true"></span></div>' +
     '<div class="bg-tl"><button type="button" class="bg-fs bg-share" aria-label="링크 공유" title="링크 공유"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg></button>' +
-    '<a class="bg-fs" target="_blank" rel="noopener" aria-label="전체 화면으로 열기" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></a></div>');
+    '<a class="bg-fs bg-open" target="_blank" rel="noopener" aria-label="새 탭에서 열기" title="새 탭에서 열기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>' +
+    '<button type="button" class="bg-fs bg-full" aria-label="전체 화면" title="전체 화면"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>');
   badge.style.display = 'none';
-  var fs = badge.querySelector('a.bg-fs'), shareBtn = badge.querySelector('.bg-share'), nameEl = badge.querySelector('.bg-name'), seg = badge.querySelector('.bg-seg'), segBtn = { map: seg.querySelector('[data-v=map]'), sat: seg.querySelector('[data-v=sat]') };
+  var fs = badge.querySelector('a.bg-open'), fsBtn = badge.querySelector('.bg-full'), shareBtn = badge.querySelector('.bg-share'), nameEl = badge.querySelector('.bg-name'), seg = badge.querySelector('.bg-seg'), segBtn = { map: seg.querySelector('[data-v=map]'), sat: seg.querySelector('[data-v=sat]') };
   var say = el('div', 'bg-say'); say.setAttribute('role', 'status');
   stage.appendChild(frame); stage.appendChild(loader); stage.appendChild(badge); stage.appendChild(say);
   var foot = el('footer', 'bg-foot', '<span class="bg-fl">행정경계 © OpenStreetMap contributors · 지도 이용 안내는 지도 아래 “자세히”</span><span class="bg-fr"><button type="button" class="bg-link" data-act="credits">사진 출처</button><span class="bg-brand"><i></i>볕결 세종</span></span>');
@@ -100,7 +101,7 @@
     stT.push(setTimeout(function () { note.textContent = '조금 오래 걸리네요. 처음 한 번만 그래요.'; }, 14000));
     stT.push(setTimeout(function () { loader.classList.add('off'); stage.classList.add('ready'); toast('지도가 늦어지고 있어요. 인터넷 연결을 확인하거나 다시 시도해 주세요.', { label: '다시 시도', fn: function () { if (cur) select(cur); } }); }, 30000));
   }
-  var VIEWER_V = '20261026j';
+  var VIEWER_V = '20261026k';
   function viewerUrl(name, hash) { var b = name === '행복도시 전체' ? VIEWER + 'haengbok/' : VIEWER + 'dongs/' + encodeURIComponent(name) + '/'; return b + '?v=' + VIEWER_V + (hash || '#') + (hash ? '&' : '') + 'ext=1'; }
   function setSeg(state) {
     var on = state === 'on' || state === 'loading', auto = state === 'auto';
@@ -133,6 +134,34 @@
     frame.onload = plain ? function () { setTimeout(function () { stages(false); }, 1500); } : null; frame.title = name + ' 3D 일조 지도'; live.textContent = name + ' 지도를 불러옵니다'; frame.src = u; fs.href = u; badge.style.display = 'flex';
     try { history.replaceState(null, '', '#' + encodeURIComponent(name)); } catch (x) { /* 주소 갱신 불가 */ }
   }
+
+  /* chrome1: 전체 화면(같은 페이지) 토글 + 동 목록 팝오버 */
+  var fsOn = false, pseudoFs = false, fsIn = fsBtn.innerHTML, fsOut = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+  function fsSync() {
+    var on = !!(document.fullscreenElement || document.webkitFullscreenElement) || pseudoFs; fsOn = on;
+    stage.classList.toggle('is-fs', on); root.classList.toggle('bg-fs-on', on); fsBtn.innerHTML = on ? fsOut : fsIn; fsBtn.setAttribute('aria-label', on ? '축소' : '전체 화면'); fsBtn.title = on ? '축소' : '전체 화면';
+    document.documentElement.classList.toggle('bg-pfs-lock', pseudoFs);
+    setTimeout(function () { try { window.dispatchEvent(new Event('resize')); } catch (x) { /* */ } try { frame.contentWindow.dispatchEvent(new Event('resize')); } catch (x) { /* */ } }, 80);
+  }
+  function pseudoOn() { pseudoFs = true; try { history.pushState({ bgfs: 1 }, ''); } catch (x) { /* */ } fsSync(); }
+  function pseudoOff() { if (!pseudoFs) return; pseudoFs = false; fsSync(); if (history.state && history.state.bgfs) { try { history.back(); } catch (x) { /* */ } } }
+  function enterFs() {
+    var req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+    if (req && (document.fullscreenEnabled || document.webkitFullscreenEnabled)) { try { var p = req.call(stage); if (p && p.catch) p.catch(function () { pseudoOn(); }); } catch (x) { pseudoOn(); } } else pseudoOn();
+  }
+  function exitFs() { if (document.fullscreenElement || document.webkitFullscreenElement) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (x) { /* */ } } pseudoOff(); }
+  fsBtn.addEventListener('click', function () { if (fsOn) exitFs(); else enterFs(); });
+  document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync);
+  window.addEventListener('popstate', function () { if (pseudoFs) { pseudoFs = false; fsSync(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (pseudoFs) pseudoOff(); else if (dpop && !dpop.hidden) dpopSet(false); } });
+  var dpop = el('div', 'bg-dpop'); dpop.hidden = true; dpop.setAttribute('role', 'listbox'); dpop.setAttribute('aria-label', '동 선택');
+  DONGS.forEach(function (n) { var b = el('button', '', esc(n === '행복도시 전체' ? '전체' : n.replace(/동$/, ''))); b.type = 'button'; b.setAttribute('data-n', n); b.setAttribute('role', 'option'); b.addEventListener('click', function () { dpopSet(false); moved = true; select(n); }); dpop.appendChild(b); });
+  stage.appendChild(dpop);
+  function dpopSet(on) { dpop.hidden = !on; nameEl.setAttribute('aria-expanded', on ? 'true' : 'false'); if (on) { [].forEach.call(dpop.children, function (b) { var c = b.getAttribute('data-n') === cur; b.classList.toggle('on', c); if (c) b.setAttribute('aria-selected', 'true'); else b.removeAttribute('aria-selected'); }); } }
+  nameEl.setAttribute('role', 'button'); nameEl.tabIndex = 0; nameEl.setAttribute('aria-haspopup', 'listbox'); nameEl.setAttribute('aria-expanded', 'false'); nameEl.title = '다른 동 고르기';
+  nameEl.addEventListener('click', function () { dpopSet(dpop.hidden); });
+  nameEl.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dpopSet(dpop.hidden); } });
+  document.addEventListener('pointerdown', function (e) { if (!dpop.hidden && !dpop.contains(e.target) && e.target !== nameEl) dpopSet(false); }, true);
   shareBtn.addEventListener('click', function () {
     var url = location.href.split('#')[0] + '#' + encodeURIComponent(cur || ''), t = (cur || '세종') + ' 3D 지도 · 볕결 세종';
     if (navigator.share) { navigator.share({ title: t, url: url }).catch(function () { /* 취소 */ }); return; }

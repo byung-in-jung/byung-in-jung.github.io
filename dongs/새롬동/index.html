@@ -6228,7 +6228,24 @@ body.hideall #ds1{display:none}
 #vwpSet.on{background:var(--acc);color:var(--on-acc,#04202e)}
 body.fm-window #vwpop,body.fm-window #vwpBtn{display:none!important}
 @media (max-width:720px),(max-height:620px){#vwpop{left:0!important;right:0;top:auto!important;width:auto;max-width:none;max-height:40vh;overflow:auto;border-radius:14px 14px 0 0}}
-@media (min-width:1600px){#vwpop{width:340px;font-size:15px}#vwpop .btn{min-height:44px;font-size:15px}#vwpBtn{width:40px;height:40px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
+@media (min-width:1600px){#vwpop{width:340px;font-size:15px}#vwpop .btn{min-height:44px;font-size:15px}#vwpBtn{width:40px;height:40px}}
+/* ---- chrome1: 단독 뷰어의 블로그형 패널(#vwChrome). 옛 #vwTg 칩·⌄ 단추는 숨긴다(ext=1 에서는 원래 만들지 않음) ---- */
+html:not(.fm-ext) #vwTg,html:not(.fm-ext) #vwpBtn{display:none!important}
+#vwChrome{position:fixed;z-index:62;left:16px;top:16px;display:flex;align-items:center;gap:8px;height:44px;box-sizing:border-box;padding:0 6px 0 16px;border-radius:14px;background:rgba(255,250,240,.92);-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);border:1px solid rgba(60,50,20,.16);box-shadow:0 4px 18px rgba(20,25,10,.22);color:#2f3819;font:600 14px/1 var(--font,"Pretendard","Malgun Gothic",system-ui,sans-serif)}
+#vwChrome .vc-name{font-size:17px;font-weight:700;white-space:nowrap}
+#vwChrome .vc-sep{width:1px;height:22px;background:rgba(60,50,20,.2)}
+#vwChrome .vc-seg{display:flex;padding:3px;gap:2px;border-radius:10px;background:rgba(60,50,20,.1)}
+#vwChrome .vc-seg button{min-width:44px;height:30px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;cursor:pointer;position:relative}
+#vwChrome .vc-seg button[aria-pressed="true"]{background:#2f3819;color:#fffaf0}
+#vwChrome.vc-loading .vc-seg button[data-v=sat]{opacity:.75}
+#vwChrome .vc-seg button::before,#vwChrome .vc-b::before{content:"";position:absolute;inset:-7px -2px}
+#vwChrome .vc-b{position:relative;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:10px;background:transparent;color:#2f3819;cursor:pointer;padding:0;font-size:15px}
+#vwChrome .vc-b:hover,#vwChrome .vc-seg button:hover{background:rgba(86,99,45,.14)}
+#vwChrome .vc-seg button[aria-pressed="true"]:hover{background:#2f3819}
+#vwChrome button:focus-visible{outline:3px solid #f0b24a;outline-offset:1px}
+body.hideall #vwChrome{display:none}
+@media (max-width:760px){#vwChrome{left:10px;top:10px;height:40px;gap:6px;padding:0 4px 0 12px;border-radius:12px}#vwChrome .vc-name{font-size:15px}#vwChrome .vc-seg button{min-width:38px;height:28px}}
+@media (min-width:1600px) and (min-height:621px){#vwChrome{height:52px;gap:10px;left:20px;top:18px}#vwChrome .vc-name{font-size:20px}#vwChrome .vc-seg button{height:38px;min-width:52px;font-size:16px}#vwChrome .vc-b{width:40px;height:40px}}</style><script id="daystrip1js">/* daystrip1: 하루 스트립(≤28px 알약). 도크 ☀ 일조 하나로 열고 닫는다. 일조 패널·#sun-clock·▶ 하루 버튼을 대체(숨김).
    엔진(sun.js)은 그대로: SUN.state(min/doy/playing/paused/shadow), SUN.setTime/setDate, 패널 안 숨은 버튼(#sun-pd/#sun-pp/#sun-sh/#sun-now/[data-p])을 대리 조작한다.
    declutter1·wmark1 뒤 마지막에 주입. 큰 패널은 ⌄ 로만 연다. */
 (function () {
@@ -6354,7 +6371,7 @@ body.fm-window #vwpop,body.fm-window #vwpBtn{display:none!important}
     var a = $('vwAttr'); if (a && /외부 공개 금지/.test(a.textContent)) a.textContent = '브이월드(국토교통부)';
   }
   function place() {
-    if (!pop || pop.hidden) return; var tg = $('vwTg'), phone = matchMedia('(max-width:720px),(max-height:620px)').matches;
+    if (!pop || pop.hidden) return; var tg = $('vwChrome') || $('vwTg'), phone = matchMedia('(max-width:720px),(max-height:620px)').matches;
     if (phone) { var f = $('footer'); pop.style.bottom = (f ? f.offsetHeight : 28) + 'px'; pop.style.left = pop.style.top = ''; return; }
     var r = tg && tg.getBoundingClientRect(); pop.style.bottom = ''; pop.style.left = Math.max(8, r && r.width ? r.left : 12) + 'px'; pop.style.top = Math.round((r && r.width ? r.bottom : 56) + 8) + 'px';
   }
@@ -6375,5 +6392,46 @@ body.fm-window #vwpop,body.fm-window #vwpBtn{display:none!important}
   }
   setInterval(function () { try { entry(); } catch (e) { /* 아직 준비 전 */ } }, 700);
   addEventListener('resize', function () { place(); try { entry(); } catch (e) { /* */ } });
+})();
+
+/* chrome1(단독 뷰어): 블로그 패널과 같은 모양의 [동 이름 | 지도·위성 | ⌄ | 링크 | 전체화면] 알약. 블로그 임베드(ext=1)에서는 만들지 않는다. */
+(function () {
+  if (window.__vc1 || /[#&]ext=1/.test(location.hash)) return; window.__vc1 = 1;
+  var d = document, $ = function (i) { return d.getElementById(i); }, bar = null, nm = (decodeURIComponent((location.pathname.match(/\/dongs\/([^\/]+)\//) || [])[1] || '') || (d.title || '').split(' ')[0] || '세종');
+  var IC_SHARE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg>';
+  var IC_IN = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+  var IC_OUT = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+  function toast(m) { var t = $('toast'); if (t) { t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2600); } }
+  function fsEl() { return d.fullscreenElement || d.webkitFullscreenElement; }
+  function build() {
+    if (bar) return; bar = d.createElement('div'); bar.id = 'vwChrome'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', '지도 보기 설정');
+    bar.innerHTML = '<span class="vc-name"></span><span class="vc-sep" aria-hidden="true"></span><div class="vc-seg" role="group" aria-label="지도 종류"><button type="button" data-v="map" aria-pressed="false">지도</button><button type="button" data-v="sat" aria-pressed="false">위성</button></div>' +
+      '<button type="button" class="vc-b vc-more" aria-label="브이월드 설정 열기" aria-expanded="false" title="브이월드 설정">⌄</button><span class="vc-sep" aria-hidden="true"></span>' +
+      '<button type="button" class="vc-b vc-share" aria-label="링크 공유" title="링크 공유">' + IC_SHARE + '</button><button type="button" class="vc-b vc-full" aria-label="전체 화면" title="전체 화면">' + IC_IN + '</button>';
+    d.body.appendChild(bar); bar.querySelector('.vc-name').textContent = nm;
+    bar.querySelector('[data-v=map]').addEventListener('click', function () { var o = window.__vwo; if (o && o.st.on) o.turnOff(); setTimeout(sync, 250); });
+    bar.querySelector('[data-v=sat]').addEventListener('click', function () { var o = window.__vwo; if (o && !o.st.on) o.turnOn(); setTimeout(sync, 250); });
+    bar.querySelector('.vc-more').addEventListener('click', function () { if (window.__fmVwPanel) window.__fmVwPanel.toggle(); });
+    bar.querySelector('.vc-share').addEventListener('click', function () {
+      var url = location.href.split('#')[0].replace(/[?&]t=\d+/, ''), t = nm + ' 3D 일조 지도 · 볕결 세종';
+      if (navigator.share) { navigator.share({ title: t, url: url }).catch(function () { /* 취소 */ }); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast('링크를 복사했어요 · ' + nm); }, function () { toast(url); }); else toast(url);
+    });
+    var fb = bar.querySelector('.vc-full');
+    fb.addEventListener('click', function () {
+      if (fsEl()) { try { (d.exitFullscreen || d.webkitExitFullscreen).call(d); } catch (e) { /* */ } return; }
+      var el = d.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) { try { var p = req.call(el); if (p && p.catch) p.catch(function () { toast('이 브라우저에서는 전체 화면을 쓸 수 없어요'); }); } catch (e) { toast('이 브라우저에서는 전체 화면을 쓸 수 없어요'); } } else toast('이 브라우저에서는 전체 화면을 쓸 수 없어요');
+    });
+    var fsync = function () { var on = !!fsEl(); fb.innerHTML = on ? IC_OUT : IC_IN; fb.setAttribute('aria-label', on ? '축소' : '전체 화면'); fb.title = on ? '축소' : '전체 화면'; setTimeout(function () { try { window.dispatchEvent(new Event('resize')); } catch (e) { /* */ } }, 80); };
+    d.addEventListener('fullscreenchange', fsync); d.addEventListener('webkitfullscreenchange', fsync);
+  }
+  function sync() {
+    if (!bar) return; var o = window.__vwo, s = o && o.st ? o.st.state : 'off', on = !!(o && o.st && o.st.on);
+    var m = bar.querySelector('[data-v=map]'), sa = bar.querySelector('[data-v=sat]'); m.setAttribute('aria-pressed', String(!on)); sa.setAttribute('aria-pressed', String(on)); bar.classList.toggle('vc-loading', s === 'loading');
+    var vp = $('vwpop'), more = bar.querySelector('.vc-more'); more.setAttribute('aria-expanded', String(!!(vp && !vp.hidden)));
+    if (!o) sa.disabled = true; else sa.disabled = false;
+  }
+  setInterval(function () { try { if (d.body) { build(); sync(); } } catch (e) { /* 아직 준비 전 */ } }, 500);
 })();</script><!--/daystrip1--></body>
 </html>
