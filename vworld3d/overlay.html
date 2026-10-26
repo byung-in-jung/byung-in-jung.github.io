@@ -76,35 +76,58 @@ function pickAt(px, py) {
 // 상대 위치·시선을 그 점의 동-북-위 좌표계에 그대로 놓는다(지구 곡률 포함, 먼 카메라 아래 지형 차이에 영향받지 않음). ref 가 없으면(동 뷰어) 예전 그대로.
 const enuAt = (lon, lat, h) => Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(lon, lat, h));
 /*winsnap1*/
-// 창가 시점 스냅: 우리 벽점 기준 위치는 브이월드 건물 모델(1~3 m 오차)과 달라 모델 안쪽에 들어가 빈 화면이 될 수 있다.
-// 카메라 바깥 8 m 에서 벽 쪽으로 레이를 쏴 모델 표면 첫 교차점 H 를 찾고 카메라를 H + 바깥법선 1.0 m 로 옮긴다. 6 m 넘게 어긋나거나 교차가 없으면(타일 로딩 전) 몇 번 다시 시도하고, 끝내 없으면 0.5 m 만 더 바깥으로.
-const WS = { key: '', off: null, tries: 0, tm: 0, near: 0, ok: false };
-function winSnapPlace(pos0, off) {
-  const np = Cesium.Cartesian3.add(pos0, off, new Cesium.Cartesian3()), hd = V.camera.heading, pt = V.camera.pitch;
+// ---- 창가 시점 스냅(브이월드). 우리 벽점 기준 위치는 브이월드 건물 모델(1~3 m 오차)과 달라 모델 안쪽에 들어가면 빈 화면이 된다.
+// 설정값(m): OFF = 모델 벽 표면에서 바깥으로 둘 거리(우리 3D 창가의 벽 바깥 0.1 m 와 같다), NEAR = 창가에서만 쓰는 근평면(10 cm 에서도 벽이 잘리지 않게),
+// STEPS = 모델 안쪽으로 보일 때(화면 5점이 빈 회색 BG ± TOL) 0.1 -> 0.3 -> 0.6 -> 1.0 순으로만 밀기, MAXHIT = 레이 교차점이 우리 벽점에서 이보다 멀면 무시(폴백: 우리 벽 바깥 OFF).
+const WSC = { OFF: 0.10, NEAR: 0.02, STEPS: [0.1, 0.3, 0.6, 1.0], BG: [0x3a, 0x3c, 0x40], TOL: 14, MAXHIT: 6 };
+const WS = { key: '', base: null, tries: 0, tm: 0, near: 0, ok: false, step: 0, blankSent: false, chk: 0 };
+function winSnapPlace(base, nW, dist) {
+  const np = Cesium.Cartesian3.add(base, Cesium.Cartesian3.multiplyByScalar(nW, dist, new Cesium.Cartesian3()), new Cesium.Cartesian3()), hd = V.camera.heading, pt = V.camera.pitch;
   V.camera.setView({ destination: np, orientation: { heading: hd, pitch: pt, roll: 0 } }); V.scene.requestRender && V.scene.requestRender();
+}
+function winBlank(cb) {      /* 렌더 직후 화면 5점(중앙·네 구석 안쪽)이 모두 빈 회색이면 true */
+  const l = V.scene.postRender.addEventListener(() => {
+    l();
+    try {
+      const cv = V.scene.canvas, w = cv.width, h = cv.height; if (!w || !h) { cb(false); return; }
+      const sc = document.createElement('canvas'); sc.width = 20; sc.height = 12; const g = sc.getContext('2d', { willReadFrequently: true }); g.drawImage(cv, 0, 0, w, h, 0, 0, 20, 12);
+      let blank = true; for (const [x, y] of [[10, 6], [5, 3], [15, 3], [5, 9], [15, 9]]) { const d = g.getImageData(x, y, 1, 1).data; if (Math.abs(d[0] - WSC.BG[0]) > WSC.TOL || Math.abs(d[1] - WSC.BG[1]) > WSC.TOL || Math.abs(d[2] - WSC.BG[2]) > WSC.TOL) { blank = false; break; } }
+      cb(blank);
+    } catch (e) { cb(false); }
+  });
+  try { V.scene.requestRender(); } catch (e) { /* */ }
+}
+function winCheck(key, nW) {      /* 타일이 다 올라온 뒤에도 빈 화면이면 한 단계씩만 바깥으로 */
+  clearTimeout(WS.chk); WS.chk = setTimeout(() => {
+    if (WS.key !== key || !WS.base) return;
+    let loaded = true; try { loaded = V.scene.globe.tilesLoaded; } catch (e) { /* */ }
+    if (!loaded) { WS.chk = setTimeout(() => winCheck(key, nW), 1200); return; }
+    winBlank((blank) => {
+      if (!blank || WS.key !== key) return;
+      if (WS.step + 1 < WSC.STEPS.length) { WS.step++; winSnapPlace(WS.base, nW, WSC.STEPS[WS.step]); winCheck(key, nW); }
+      else if (!WS.blankSent) { WS.blankSent = true; say({ t: 'winblank' }); }
+    });
+  }, 1500);
 }
 function winSnap(c) {
   try {
-    if (!WS.near) WS.near = V.camera.frustum.near; V.camera.frustum.near = 0.1;
+    if (!WS.near) WS.near = V.camera.frustum.near; V.camera.frustum.near = WSC.NEAR;
     const pos0 = Cesium.Cartesian3.clone(V.camera.positionWC), cg = Cesium.Cartographic.fromCartesian(pos0), M = enuAt(Cesium.Math.toDegrees(cg.longitude), Cesium.Math.toDegrees(cg.latitude), cg.height);
     const nW = Cesium.Cartesian3.normalize(Cesium.Matrix4.multiplyByPointAsVector(M, new Cesium.Cartesian3(c.win.e, c.win.n, 0), new Cesium.Cartesian3()), new Cesium.Cartesian3());
     const key = [c.lon.toFixed(6), c.lat.toFixed(6), cg.height.toFixed(1), c.win.e.toFixed(2), c.win.n.toFixed(2)].join();
-    if (WS.key !== key) { WS.key = key; WS.off = null; WS.tries = 0; WS.ok = false; clearTimeout(WS.tm); }
-    if (WS.off) { winSnapPlace(pos0, WS.off); return; }
+    if (WS.key !== key) { WS.key = key; WS.base = null; WS.tries = 0; WS.ok = false; WS.step = 0; WS.blankSent = false; clearTimeout(WS.tm); clearTimeout(WS.chk); }
+    if (WS.base && WS.ok) { winSnapPlace(WS.base, nW, WSC.STEPS[WS.step]); return; }
+    // 뷰어가 보낸 위치 pos0 = 우리 벽 바깥 0.1 m. 우리 벽 표면 점 = pos0 - 0.1 n
+    const wall0 = Cesium.Cartesian3.subtract(pos0, Cesium.Cartesian3.multiplyByScalar(nW, 0.1, new Cesium.Cartesian3()), new Cesium.Cartesian3());
     let hit = null;
     try {
       const org = Cesium.Cartesian3.add(pos0, Cesium.Cartesian3.multiplyByScalar(nW, 8, new Cesium.Cartesian3()), new Cesium.Cartesian3()), ray = new Cesium.Ray(org, Cesium.Cartesian3.negate(nW, new Cesium.Cartesian3()));
       const r = V.scene.pickFromRay ? V.scene.pickFromRay(ray, [], 0.1) : null; if (r && r.position) hit = r.position;
     } catch (e) { hit = null; }
-    if (hit) {
-      const wall0 = Cesium.Cartesian3.subtract(pos0, Cesium.Cartesian3.multiplyByScalar(nW, 0.7, new Cesium.Cartesian3()), new Cesium.Cartesian3());
-      if (Cesium.Cartesian3.distance(hit, wall0) <= 6) {
-        const np = Cesium.Cartesian3.add(hit, nW, new Cesium.Cartesian3()), np2 = new Cesium.Cartesian3(np.x, np.y, np.z), off = Cesium.Cartesian3.subtract(np2, pos0, new Cesium.Cartesian3());
-        WS.off = off; WS.ok = true; winSnapPlace(pos0, off); return;
-      }
-    }
-    if (WS.tries < 6) { WS.tries++; WS.tm = setTimeout(() => { if (want && want.win && WS.key === key) apply(want); }, 900); V.scene.requestRender && V.scene.requestRender(); }
-    else { WS.off = Cesium.Cartesian3.multiplyByScalar(nW, 0.5, new Cesium.Cartesian3()); winSnapPlace(pos0, WS.off); }
+    if (hit && Cesium.Cartesian3.distance(hit, wall0) <= WSC.MAXHIT) { WS.base = hit; WS.ok = true; winSnapPlace(hit, nW, WSC.STEPS[WS.step]); winCheck(key, nW); return; }
+    // 교차 없음(타일 로딩 전): 우리 벽 바깥 OFF 로 두고, 타일이 오는 대로 다시 시도(6회). 늦게 교차가 잡히면 위치를 갱신한다.
+    WS.base = wall0; winSnapPlace(wall0, nW, WSC.OFF);
+    if (WS.tries < 6) { WS.tries++; WS.tm = setTimeout(() => { if (want && want.win && WS.key === key) apply(want); }, 900); } else winCheck(key, nW);
   } catch (e) { /* 스냅 실패는 기존 위치 유지 */ }
 }
 
