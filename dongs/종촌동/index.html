@@ -5291,7 +5291,7 @@ const VWO = (() => {
     try { applyCamera(); } catch (e) { /* 아직 준비 전 */ }      // 숨은 창에서 프레임이 늦어도 현재 시점으로 맞춘 카메라를 읽는다
     camera.updateMatrixWorld(); const p = camera.position, d = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion), x = p.x, y = -p.z, gr = hAt(x, y);
     const win = typeof WIN !== 'undefined' && WIN.on, a0 = win ? -WIN.yaw0 : 0, off = win ? 0.6 : 0, [lon, lat] = toLL(x + Math.sin(a0) * off, y + Math.cos(a0) * off);      // 창가 시점: 벽 안쪽에 묻히지 않게 브이월드 카메라는 창이 향한 방향(바깥 법선)으로 0.6 m. 보는 방향이 아니라 창 방향 기준이라 좌우로 돌려 봐도 위치가 옆으로 밀리지 않는다
-    const c = { lon, lat, agl: Math.max(1, p.y - gr), absZ: p.y, heading: (Math.atan2(d.x, -d.z) * R2D + 360) % 360, pitch: Math.asin(clamp(d.y, -1, 1)) * R2D, fov: camera.fov, aspect: camera.aspect, ground: gr };
+    const c = { lon, lat, agl: Math.max(1, p.y - gr), absZ: p.y, heading: (Math.atan2(d.x, -d.z) * R2D + 360) % 360, pitch: Math.asin(clamp(d.y, -1, 1)) * R2D, fov: camera.fov, aspect: camera.aspect, ground: gr }; if (win) c.win = { e: Math.sin(a0), n: Math.cos(a0) };      /*winsnap1*/
     // 엔진 자체 로고·하단 바(국토교통부 브이월드)가 우리 푸터에 가려지지 않게 iframe 은 푸터 위까지만 덮는다. 같은 화면의 위쪽 일부이므로 화각·기울기를 맞춘다(초점거리 고정, 가운데가 위로 옮겨짐).
     const H = innerHeight, hc = Math.min(H * 0.4, st.on ? (($('footer').offsetHeight || 0) + st.bh) : 0), fpx = (H / 2) / Math.tan(camera.fov * Math.PI / 360), dp = Math.atan((hc / 2) / fpx) * R2D;
     st.hc = hc; st.dp = dp; document.documentElement.style.setProperty('--vwb', hc + 'px');
