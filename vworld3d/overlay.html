@@ -109,6 +109,7 @@ function winSnap(c) {
 }
 
 function apply(c) {
+  if (!c || !(c.fov > 1 && c.fov < 170) || !(c.aspect > 0.05 && c.aspect < 20) || !isFinite(c.heading) || !isFinite(c.pitch)) { say({ t: 'rerr', msg: 'bad camera (size 0?)', stack: '', fatal: false }); return; }      /*vwerr1-guard*/
   want = c;
   try { V.camera.cancelFlight && V.camera.cancelFlight(); } catch (e) { /* 비행 없음 */ }
   // Cesium 의 fov 는 가로가 더 길면 가로 화각, 아니면 세로 화각이다
@@ -133,7 +134,28 @@ function apply(c) {
 }
 const refGround = (w) => (w.ref ? ground(w.ref.lon, w.ref.lat) : ground(w.lon, w.lat));
 
+/*vwerr1*/
+// 렌더 오류 감시 + 안전 모드(우리 덧그림 프리미티브 전부 제거 후 브이월드 기본 렌더 재개). 안전 모드에서도 오류면 부모에 fatal 을 알려 우리 지도로 폴백.
+let SAFE = false;
+function safeMode() {
+  SAFE = true;
+  try { shHide(); } catch (e) { /* */ } try { shvHide(); } catch (e) { /* */ } try { flowClear(); } catch (e) { /* */ }
+  for (const pr of [SHD.prim, SHV.prim]) { if (!pr) continue; for (const col of [V.scene.primitives, V.scene.groundPrimitives]) { try { col.remove(pr); } catch (e) { /* */ } } }
+  SHD.prim = null; SHV.prim = null; SHD.layer = null; SHV.shown = false; SHD.shown = false;
+  try { V.cesiumWidget.useDefaultRenderLoop = true; V.scene.requestRender(); V.resize && V.resize(); } catch (e) { /* */ }
+}
+
 function ready() {
+  /*vwerr1-hook*/
+  try {
+    V.cesiumWidget.showRenderLoopErrors = false;
+    V.scene.renderError.addEventListener((sc, err) => {
+      const msg = String(err && err.message || err), stack = String(err && err.stack || '').split('\n').slice(0, 8).join('\n').replace(/https?:\/\/[^\s)]+/g, '<url>');
+      window.__vwErr = { msg, stack, safe: SAFE }; say({ t: 'rerr', msg, stack, fatal: SAFE });
+      if (!SAFE) safeMode(); else { try { V.cesiumWidget.useDefaultRenderLoop = false; } catch (e) { /* */ } }
+    });
+  } catch (e) { /* 오류 감시 불가 */ }
+
   // 사용자가 이 화면을 직접 움직이면 지형이 늦게 와도 카메라를 다시 맞추지 않는다
   let dn = null;
   const cv = V.scene.canvas; ['wheel', 'keydown'].forEach((e) => cv.addEventListener(e, () => { touched = true; }, { passive: true }));
@@ -415,6 +437,7 @@ function flowMsg(m) {
 window.addEventListener('message', (e) => {
   if (e.origin !== location.origin || !e.data || !e.data.vwo || !V) return;
   const m = e.data;
+  if (m.t === 'safe') { if (m.on) safeMode(); else SAFE = false; return; } if (SAFE && (m.t === 'shadow' || m.t === 'shvol' || m.t === 'flow')) return;      /*vwerr1*/
   if (m.t === 'cam') { touched = false; apply(m.cam); if (ready.reset) ready.reset(); }
   else if (m.t === 'get') say({ t: 'snap', id: m.id, snap: snapshotRef() });
   else if (m.t === 'wc') wc = !!m.on;

@@ -6236,8 +6236,6 @@ body.hideall #ds1{display:none}
  #winBar #winTxt{font-size:14px;max-width:260px}#winBar #winExit{height:44px!important;min-height:44px!important;padding:0 18px!important}#winBar #winExit::after{font-size:15px;line-height:44px}
 }
 
-/* 하루 스트립 상시: 도크의 ☀ 일조 버튼은 없앤다 */
-html #fmSunCore,html #topbar>#fmSunCore{display:none!important}
 
 /* ---- vwpanel1: 브이월드 팝오버 ---- */
 #vwpop{position:fixed;z-index:70;left:12px;top:62px;width:280px;max-width:calc(100vw - 16px);box-sizing:border-box;padding:10px 12px;border-radius:14px;background:var(--glass-solid,#fffaf0);color:var(--tx,#2b2a22);border:1px solid var(--line2,rgba(60,50,20,.25));box-shadow:0 6px 22px rgba(20,25,10,.3);font:13px/1.4 var(--font,system-ui,"Malgun Gothic",sans-serif)}
@@ -6378,13 +6376,13 @@ body.fm-window #vfChip{display:none!important}
   function hook() {
     var core = $('fmSunCore'); if (!core || core.__ds) return !!core && !!core.__ds; core.__ds = 1;
     var sh = $('sun-sh'); try { if (localStorage.getItem('fm-ds-shoff') === '1') userOff = true; } catch (e) { /* */ } if (sh) sh.addEventListener('change', function () { if (!selfSh) { userOff = !sh.checked; try { localStorage.setItem('fm-ds-shoff', userOff ? '1' : '0'); } catch (e) { /* */ } } });
-    core.addEventListener('click', function (e) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(!open); }, true);
+    core.addEventListener('click', function (e) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(!open); try { localStorage.setItem('fm-ds-hide', open ? '0' : '1'); } catch (x) { /* */ } }, true);
     core.setAttribute('aria-label', '일조 · 하루 그림자 스트립 열기/닫기'); core.title = '햇빛 시각을 하루 스트립으로 보고 재생합니다 (다시 누르면 접힘)'; core.setAttribute('aria-pressed', 'false');
     return true;
   }
   var n = 0, iv = setInterval(function () { if (hook() || ++n > 400) clearInterval(iv); }, 150);
   /* 항상 보이는 스트립: 엔진과 패널 버튼이 준비되면 열어 두고 접지 않는다(☀ 버튼은 도크에서 뺐다) */
-  var n2 = 0, iv2 = setInterval(function () { if (!open && st() && $('sun-sh') && $('footer')) { clearInterval(iv2); setOpen(true); } else if (++n2 > 600) clearInterval(iv2); }, 250);
+  var n2 = 0, iv2 = setInterval(function () { if (!open && st() && $('sun-sh') && $('footer')) { clearInterval(iv2); var hid = false; try { hid = localStorage.getItem('fm-ds-hide') === '1'; } catch (x) { /* */ } if (!hid) setOpen(true); else { build(); var core1 = $('fmSunCore'); if (core1) core1.setAttribute('aria-pressed', 'false'); } } else if (++n2 > 600) clearInterval(iv2); }, 250);
   addEventListener('resize', place);
 })();
 
@@ -6585,5 +6583,31 @@ body.fm-window #vfChip{display:none!important}
     post({ t: 'flow', on: true, polys: polys, counts: counts, q: qq, z: z }, [polys.buffer, counts.buffer, qq.buffer, z.buffer]); sent = true;
   }
   setInterval(function () { try { tick(); } catch (e) { /* 아직 준비 전 */ } }, 700);
+})();
+
+/* vwerr1(뷰어): 오버레이의 렌더 오류 보고(rerr)를 console.warn 으로 남기고, 안전 모드에서도 멈추면 우리 지도로 폴백. 안전 모드(#vwsafe=1 또는 팝오버 '그림자·동선 덧그림 끄기') 전달. */
+(function () {
+  if (window.__ve1) return; window.__ve1 = 1;
+  var d = document, ext = /[#&]ext=1/.test(location.hash);
+  function lsG(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsS(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* */ } }
+  function flag() { return /[#&]vwsafe=1/.test(location.hash) || lsG('fm-vw-safe') === '1'; }
+  function send(m) { var o = window.__vwo; if (o && o.st && o.st.fr && o.st.fr.contentWindow) o.st.fr.contentWindow.postMessage(Object.assign({ vwo: 1 }, m), location.origin); }
+  function toast(m) { var t = d.getElementById('toast'); if (t) { t.textContent = m; t.classList.add('on'); setTimeout(function () { t.classList.remove('on'); }, 3200); } }
+  window.addEventListener('message', function (e) {
+    var m = e.data, o = window.__vwo; if (!m || !m.vwo || !o || !o.st || !o.st.fr || e.source !== o.st.fr.contentWindow) return;
+    if (m.t === 'ready' && flag()) send({ t: 'safe', on: true });
+    if (m.t === 'rerr') {
+      try { console.warn('[브이월드 렌더 오류]', m.msg, m.stack); } catch (x) { /* */ } window.__vwErrLast = m;
+      if (ext) { try { parent.postMessage({ type: 'vw-error', msg: String(m.msg).slice(0, 200), stack: String(m.stack || '').slice(0, 600) }, 'https://scity3d.blogspot.com'); } catch (x) { /* */ } }
+      if (m.fatal) { toast('브이월드 화면에 문제가 생겨 우리 지도로 보여드려요'); try { o.turnOff(true); } catch (x) { /* */ } }
+    }
+  });
+  setInterval(function () {
+    var p = d.getElementById('vwpop'); if (!p || p.querySelector('.ve-opt')) return; var n = p.querySelector('.vp-note'); if (!n) return;
+    var l = d.createElement('label'); l.className = 'vf-opt ve-opt'; l.innerHTML = '<input type="checkbox"> 그림자·동선 덧그림 끄기(문제 해결용)'; var cb = l.querySelector('input'); cb.checked = flag();
+    cb.addEventListener('change', function () { lsS('fm-vw-safe', cb.checked ? '1' : '0'); send({ t: 'safe', on: cb.checked }); if (!cb.checked && window.__vwShadow && window.__vwShadow.send) { try { window.__vwShadow.send(true); } catch (x) { /* */ } } });
+    p.insertBefore(l, n);
+  }, 700);
 })();</script><!--/daystrip1--></body>
 </html>
