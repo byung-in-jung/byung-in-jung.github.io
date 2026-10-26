@@ -28,7 +28,7 @@
   root.innerHTML = '';
   var SUNARC = '<svg viewBox="0 0 56 30" aria-hidden="true"><path class="arc" d="M3 27 Q28 -14 53 27"/><circle class="dot" cx="28" cy="10" r="5"/></svg>';
   var head = el('header', 'bg-head',
-    '<div class="bg-logo"><h1 class="bg-title">볕결<i aria-hidden="true"></i><span>세종</span></h1><p class="bg-sub">햇볕이 드는 동네를 3D로 둘러봅니다</p></div>' +
+    '<div class="bg-logo"><h1 class="bg-title">볕결<i aria-hidden="true"></i><span>세종</span></h1><p class="bg-sub">햇볕이 드는 동네를 3D로 둘러봅니다<a class="bg-howto" href="' + BASE + 'guide/" target="_blank" rel="noopener">▶ 사용법 영상</a></p></div>' +
     '<div class="bg-sun" aria-live="off">' + SUNARC + '<div><span class="bg-sun-t">—</span><small class="bg-sun-s"></small></div></div>');
   var rail = el('div', 'bg-rail at-start');
   var scroller = el('div', 'bg-scroll');

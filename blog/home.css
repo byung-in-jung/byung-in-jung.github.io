@@ -251,3 +251,6 @@ html.bg-pfs-lock,html.bg-pfs-lock body{overflow:hidden}
 /* 사용법 영상 링크(푸터) */
 #bg-home a.bg-link{display:inline-flex;align-items:center;margin-right:8px}
 #bg-home .bg-fr{flex-wrap:wrap}
+
+#bg-home .bg-howto{margin-left:12px;padding:3px 10px;border:1px solid var(--line);border-radius:999px;font:600 13px/1.4 var(--sans);color:var(--ink-2);text-decoration:none;white-space:nowrap}
+#bg-home .bg-howto:hover{color:var(--ink);border-color:var(--ink-2)}
