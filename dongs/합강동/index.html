@@ -6675,5 +6675,28 @@ body.fm-window #vfChip{display:none!important}
     var l = d.createElement('label'); l.className = 'vf-opt'; l.innerHTML = '<input type="checkbox"> 범위 밖에서는 자동으로 위성 켜기'; var cb = l.querySelector('input'); cb.checked = lsG('fm-vw-auto') !== '0'; cb.addEventListener('change', function () { lsS('fm-vw-auto', cb.checked ? '1' : '0'); }); p.insertBefore(l, n);
   }
   setInterval(function () { try { tick(); opt(); } catch (e) { /* 아직 준비 전 */ } }, 300);
+})();
+
+
+/* vwflow1: 브이월드 켜짐 + ↗ 동선 켜짐일 때 동선(선·가중치)을 overlay(Cesium)로 보낸다. 시점 중심 3.5 km(폰 2.6 km) 안, 가중치 상위 N개(폰 400 / 데스크톱 1500). 꺼지면 on:false. */
+(function () {
+  if (window.__vf2) return; window.__vf2 = 1;
+  var sent = false, lastKey = '';
+  function coarse() { try { return matchMedia('(pointer:coarse)').matches; } catch (e) { return false; } }
+  function post(m, tr) { var o = window.__vwo; if (o && o.st && o.st.fr && o.st.fr.contentWindow) o.st.fr.contentWindow.postMessage(Object.assign({ vwo: 1 }, m), location.origin, tr || []); }
+  function tick() {
+    var o = window.__vwo, sa = window.__sa; if (!o || !o.st || !sa || !sa.paths || !sa.curQ) return;
+    var want = !!(sa.S && sa.S.layers && sa.S.layers.flow) && o.st.on && o.st.state === 'on' && o.st.ready;
+    if (!want) { if (sent) { post({ t: 'flow', on: false }); sent = false; lastKey = ''; } return; }
+    var V = sa.V, H = (coarse() ? 2600 : 3500) / 2, cx = V.tx, cy = -V.tz, q = sa.curQ(), P = sa.paths, sel = [], sum = 0;
+    for (var i = 0; i < P.length; i++) { var pa = P[i], v = q[pa.ei]; if (!(v >= 0.05)) continue; var p = pa.pts; if (Math.abs(p[0] - cx) > H || Math.abs(p[1] - cy) > H) continue; sel.push(i); sum += v; }
+    var key = [Math.round(cx / 250), Math.round(cy / 250), sel.length, Math.round(sum * 50)].join(); if (sent && key === lastKey) return; lastKey = key;
+    sel.sort(function (a, b) { return q[P[b].ei] - q[P[a].ei]; }); var N = coarse() ? 400 : 1500; if (sel.length > N) sel.length = N;
+    var tot = 0; sel.forEach(function (i) { tot += P[i].pts.length / 2; });
+    var polys = new Float64Array(tot * 2), counts = new Uint16Array(sel.length), qq = new Float32Array(sel.length), z = new Float32Array(tot), k = 0;
+    sel.forEach(function (i, j) { var p = P[i].pts, n = p.length / 2; counts[j] = n; qq[j] = Math.min(1, q[P[i].ei]); for (var m = 0; m < n; m++) { var ll = o.toLL(p[2 * m], p[2 * m + 1]); polys[2 * k] = ll[0]; polys[2 * k + 1] = ll[1]; z[k] = sa.hAt(p[2 * m], p[2 * m + 1]); k++; } });
+    post({ t: 'flow', on: true, polys: polys, counts: counts, q: qq, z: z }, [polys.buffer, counts.buffer, qq.buffer, z.buffer]); sent = true;
+  }
+  setInterval(function () { try { tick(); } catch (e) { /* 아직 준비 전 */ } }, 700);
 })();</script><!--/daystrip1--></body>
 </html>

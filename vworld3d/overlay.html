@@ -328,6 +328,56 @@ function shvWarm(m) {      // 건물별 지형 높이 캐시를 20 ms 씩 끊어
   setTimeout(step, 30);
 }
 function volMsg(m) { SHV.pending = m; if (SHV.busy) return; SHV.busy = true; (async () => { while (SHV.pending) { const q = SHV.pending; SHV.pending = null; await applyVol(q); } SHV.busy = false; if (SHV.refineM && !SHV.pending) { const r = SHV.refineM; SHV.refineM = null; shvWarm(r); } })(); }
+/*flowvw1*/
+// ---- 생활동선 덮기: 부모가 보낸 선(위경도)·가중치로 브이월드 지면 위에 파란 선과 흐르는 입자를 그린다(그림자와 같은 방식).
+const FLW = { prims: [], pts: null, timer: 0, parts: [], lines: [], last: 0 };
+function flowClear() {
+  for (const p of FLW.prims) { try { V.scene.primitives.remove(p); } catch (e) { /* 무시 */ } } FLW.prims = [];
+  if (FLW.pts) { try { V.scene.primitives.remove(FLW.pts); } catch (e) { /* 무시 */ } FLW.pts = null; }
+  clearInterval(FLW.timer); FLW.timer = 0; FLW.parts = []; FLW.lines = [];
+  try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ }
+}
+function flowOff(lon, lat) { try { return SHV.offs ? shvOffAt(lon, lat) : 0; } catch (e) { return 0; } }
+function flowMsg(m) {
+  flowClear(); if (!m.on || !m.polys || !m.counts || !m.q) return;
+  const BAND = ['#94bbe9', '#568dd8', '#2d63bd', '#184599', '#0e2d6f'], groups = BAND.map(() => []); let o = 0; const lines = [];
+  for (let i = 0; i < m.counts.length; i++) {
+    const n0 = m.counts[i], q = m.q[i], a = [], zz = []; for (let k = 0; k < n0; k++) { const lo = m.polys[2 * (o + k)], la = m.polys[2 * (o + k) + 1]; if (a.length >= 2 && Math.hypot((lo - a[a.length - 2]) * 89503, (la - a[a.length - 1]) * 110574) < 0.5) continue; a.push(lo, la); zz.push(m.z[o + k]); } const n = a.length / 2; if (n < 2 || !isFinite(q)) { o += n0; continue; }
+    const L = { a, z: zz, q, cum: [0] }; for (let k = 1; k < n; k++) L.cum.push(L.cum[k - 1] + Math.hypot((a[2 * k] - a[2 * k - 2]) * 89503, (a[2 * k + 1] - a[2 * k - 1]) * 110574));
+    L.len = L.cum[n - 1]; lines.push(L); groups[Math.max(0, Math.min(4, Math.floor(q * 5)))].push(L); o += n0;
+  }
+  FLW.lines = lines;
+  const sup = Cesium.GroundPolylinePrimitive && Cesium.GroundPolylinePrimitive.isSupported && Cesium.GroundPolylinePrimitive.isSupported(V.scene);
+  groups.forEach((g, bi) => {
+    if (!g.length) return; const col = Cesium.Color.fromCssColorString(BAND[bi]).withAlpha(0.92), w = 2 + bi * 1.3;
+    try {
+      if (sup) {
+        const inst = g.map((l) => new Cesium.GeometryInstance({ geometry: new Cesium.GroundPolylineGeometry({ positions: Cesium.Cartesian3.fromDegreesArray(l.a), width: w }) }));
+        const prim = new Cesium.GroundPolylinePrimitive({ geometryInstances: inst, appearance: new Cesium.PolylineMaterialAppearance({ material: Cesium.Material.fromType('Color', { color: col }) }), asynchronous: true, classificationType: Cesium.ClassificationType.BOTH });
+        V.scene.primitives.add(prim); FLW.prims.push(prim);
+      } else {
+        const pc = new Cesium.PolylineCollection(); g.forEach((l) => { const hh = []; for (let k = 0; k < l.z.length; k++) hh.push(l.a[2 * k], l.a[2 * k + 1], l.z[k] + flowOff(l.a[2 * k], l.a[2 * k + 1]) + 1); pc.add({ positions: Cesium.Cartesian3.fromDegreesArrayHeights(hh), width: w, material: Cesium.Material.fromType('Color', { color: col }) }); });
+        V.scene.primitives.add(pc); FLW.prims.push(pc);
+      }
+    } catch (e) { /* 이 대역은 건너뜀 */ }
+  });
+  // 흐르는 입자: 가중치가 클수록 많고 빠르게
+  try {
+    const pts = new Cesium.PointPrimitiveCollection(); let n = 0;
+    for (const L of lines) { if (L.len < 3) continue; const c = Math.max(1, Math.round(L.q * 3)); for (let k = 0; k < c && n < 2500; k++, n++) { FLW.parts.push({ L, s: Math.random() * L.len, v: 4 + L.q * 12, p: pts.add({ position: Cesium.Cartesian3.ZERO, pixelSize: 3 + L.q * 2.5, color: Cesium.Color.fromCssColorString('#2d63bd').withAlpha(0.95), outlineColor: Cesium.Color.WHITE.withAlpha(0.6), outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY }) }); } }
+    V.scene.primitives.add(pts); FLW.pts = pts; FLW.last = performance.now();
+    FLW.timer = setInterval(() => {
+      const now = performance.now(), dt = Math.min(0.2, (now - FLW.last) / 1000); FLW.last = now;
+      for (const q of FLW.parts) {
+        const L = q.L; q.s += q.v * dt; if (q.s > L.len) q.s -= L.len; let k = 1; while (k < L.cum.length - 1 && L.cum[k] < q.s) k++;
+        const t = (q.s - L.cum[k - 1]) / Math.max(0.001, L.cum[k] - L.cum[k - 1]), lon = L.a[2 * k - 2] + (L.a[2 * k] - L.a[2 * k - 2]) * t, lat = L.a[2 * k - 1] + (L.a[2 * k + 1] - L.a[2 * k - 1]) * t, z = L.z[k - 1] + (L.z[k] - L.z[k - 1]) * t;
+        q.p.position = Cesium.Cartesian3.fromDegrees(lon, lat, z + flowOff(lon, lat) + 1.5);
+      }
+      try { V.scene.requestRender && V.scene.requestRender(); } catch (e) { /* 무시 */ }
+    }, 50);
+  } catch (e) { /* 입자는 생략 */ }
+}
+
 window.addEventListener('message', (e) => {
   if (e.origin !== location.origin || !e.data || !e.data.vwo || !V) return;
   const m = e.data;
@@ -338,6 +388,7 @@ window.addEventListener('message', (e) => {
   else if (m.t === 'ping') say({ t: 'ready' });
   else if (m.t === 'shadow') shadowMsg(m);
   else if (m.t === 'shvol') volMsg(m);
+  else if (m.t === 'flow') flowMsg(m);
   else if (m.t === 'shvtype') { SHV.type = m.type; }
   else if (m.t === 'shstyle') { SHD.alpha = m.alpha; try { if (SHD.layer) SHD.layer.alpha = SHD.alpha; SHV.alpha = m.alpha; if (SHV.prim && SHV.prim.ready) { const at = SHV.prim.getGeometryInstanceAttributes('shv'); if (at) at.color = Cesium.ColorGeometryInstanceAttribute.toValue(shvColor(SHV.alpha)); } if (SHD.mat) SHD.mat.uniforms.color = new Cesium.Color(1, 1, 1, SHD.alpha); V.scene.requestRender && V.scene.requestRender(); } catch (x) { /* 무시 */ } }
   else if (m.t === 'shmode') { SHD.mode = m.mode === 'prim' ? 'prim' : 'img'; shHide(); }
