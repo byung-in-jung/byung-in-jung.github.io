@@ -247,3 +247,7 @@ html.bg-pfs-lock,html.bg-pfs-lock body{overflow:hidden}
 #bg-home .bg-dpop button:hover{background:rgba(86,99,45,.14)}
 #bg-home .bg-dpop button.on{background:#2f3819;color:#fffaf0}
 @media (max-width:760px){#bg-home .bg-dpop{left:10px;top:60px;grid-template-columns:repeat(4,1fr)}#bg-home .bg-fs.bg-full,#bg-home .bg-fs.bg-open{border:1px solid rgba(60,50,20,.32);background:rgba(255,250,240,.88)}}
+
+/* 사용법 영상 링크(푸터) */
+#bg-home a.bg-link{display:inline-flex;align-items:center;margin-right:8px}
+#bg-home .bg-fr{flex-wrap:wrap}
